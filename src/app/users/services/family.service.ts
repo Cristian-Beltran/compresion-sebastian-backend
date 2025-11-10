@@ -27,7 +27,7 @@ export class FamilyMemberService {
       fullname: dto.fullname,
       email: dto.email,
       password: dto.password,
-      type: UserType.PATIENT,
+      type: UserType.FAMILY,
       address: dto.address,
       status: Status.ACTIVE,
     });

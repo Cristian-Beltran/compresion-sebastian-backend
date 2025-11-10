@@ -8,7 +8,6 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 import { FamilyMember } from './family.entity';
-import { Device } from '../../device/entities/device.entity';
 
 @Entity('patients')
 export class Patient {
@@ -21,10 +20,4 @@ export class Patient {
 
   @ManyToMany(() => FamilyMember, (family) => family.patients)
   familyMembers: FamilyMember[];
-
-  // Solo referencia inversa - SIN @JoinColumn()
-  @OneToOne(() => Device, (device) => device.patient, {
-    nullable: true, // También nullable aquí
-  })
-  device?: Device;
 }

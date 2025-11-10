@@ -7,7 +7,7 @@ import { LoggerModule } from 'src/context/shared/logger';
 import { AuthModule } from 'src/context/auth/auth.module';
 import { PdfModule } from 'src/context/pdf/pdf.module';
 import { UsersModule } from './users/user.module';
-import { DeviceModule } from './device/device.module';
+import { SessionModule } from './sesion/sesion.module';
 
 @Module({
   imports: [
@@ -17,11 +17,11 @@ import { DeviceModule } from './device/device.module';
       envFilePath: '.env',
     }),
     DatabaseModule,
-    DeviceModule,
     UsersModule,
     PdfModule,
     LoggerModule,
     AuthModule,
+    SessionModule,
   ],
 })
 export class AppModule {}

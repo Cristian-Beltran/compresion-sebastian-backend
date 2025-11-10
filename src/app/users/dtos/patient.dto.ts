@@ -4,8 +4,4 @@ import { CreateUserBaseDto } from './user.dto';
 import { ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class CreatePatientDto extends CreateUserBaseDto {
-  @IsUUID()
-  @IsOptional()
-  deviceId?: string; // el dispositivo (ESP32) asignado
-}
+export class CreatePatientDto extends CreateUserBaseDto {}

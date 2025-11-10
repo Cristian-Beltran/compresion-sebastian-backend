@@ -30,14 +30,13 @@ export class PatientService {
     });
     const patient = this.patientRepository.create({
       user,
-      device: dto.deviceId ? ({ id: dto.deviceId } as any) : undefined,
     });
     return this.patientRepository.save(patient);
   }
 
   async findAll(): Promise<Patient[]> {
     return this.patientRepository.find({
-      relations: ['user', 'device'],
+      relations: ['user'],
       where: { user: { status: Not(Status.DELETED) } },
     });
   }
@@ -45,7 +44,7 @@ export class PatientService {
   async findOne(id: string): Promise<Patient> {
     const patient = await this.patientRepository.findOne({
       where: { user: { id } },
-      relations: ['user', 'device'],
+      relations: ['user'],
     });
     if (!patient) throw new NotFoundException(`Patient ${id} not found`);
     return patient;
@@ -58,9 +57,6 @@ export class PatientService {
       email: dto.email,
       address: dto.address,
     });
-    if (dto.deviceId) {
-      patient.device = { id: dto.deviceId } as any;
-    }
 
     await this.patientRepository.save(patient);
     return await this.findOne(id);

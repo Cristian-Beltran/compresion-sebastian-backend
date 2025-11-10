@@ -25,7 +25,7 @@ export class DoctorService {
       email: dto.email,
       address: dto.address,
       password: dto.password,
-      type: UserType.PATIENT,
+      type: UserType.DOCTOR,
       status: Status.ACTIVE,
     });
     const doctor = this.doctorRepository.create({
@@ -45,7 +45,7 @@ export class DoctorService {
 
   async findOne(id: string): Promise<Doctor> {
     const doctor = await this.doctorRepository.findOne({
-      where: { id },
+      where: { user: { id } },
       relations: ['user'],
     });
     if (!doctor) throw new NotFoundException(`Doctor ${id} not found`);
@@ -54,7 +54,6 @@ export class DoctorService {
 
   async update(id: string, dto: Partial<CreateDoctorDto>): Promise<Doctor> {
     const doctor = await this.findOne(id);
-
     await this.userBaseService.updateUser(doctor.user.id, {
       fullname: dto.fullname,
       email: dto.email,

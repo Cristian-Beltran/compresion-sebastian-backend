@@ -11,7 +11,6 @@ import { PatientService } from './services/patient.service';
 import { Doctor } from './entities/doctor.entity';
 import { FamilyMember } from './entities/family.entity';
 import { Patient } from './entities/patient.entity';
-import { DeviceModule } from '../device/device.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, Doctor, FamilyMember, Patient])],
