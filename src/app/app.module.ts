@@ -5,9 +5,15 @@ import config from 'src/context/shared/config';
 import { LoggerModule } from 'src/context/shared/logger';
 // entry point
 import { AuthModule } from 'src/context/auth/auth.module';
-import { PdfModule } from 'src/context/pdf/pdf.module';
 import { UsersModule } from './users/user.module';
 import { SessionModule } from './sesion/sesion.module';
+import { DeviceModule } from './device/device.module';
+import { ConfigurationsModule } from './configurations/configurations.module';
+import { LogsModule } from './logs/logs.module';
+import { AlertsModule } from './alerts/alerts.module';
+import { TreatmentsModule } from './treatments/treatments.module';
+import { MqttModule } from './mqtt/mqtt.module';
+import { DoctorModule } from './doctor/doctor.module';
 
 @Module({
   imports: [
@@ -18,10 +24,16 @@ import { SessionModule } from './sesion/sesion.module';
     }),
     DatabaseModule,
     UsersModule,
-    PdfModule,
     LoggerModule,
     AuthModule,
     SessionModule,
+    DeviceModule,
+    ConfigurationsModule,
+    LogsModule,
+    AlertsModule,
+    TreatmentsModule,
+    MqttModule,
+    DoctorModule,
   ],
 })
 export class AppModule {}

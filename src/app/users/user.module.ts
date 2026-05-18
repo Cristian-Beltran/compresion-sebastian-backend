@@ -4,6 +4,7 @@ import { User } from 'src/app/users/entities/user.entity';
 import { FamilyMemberController } from './api/family.controller';
 import { DoctorController } from './api/doctor.controller';
 import { PatientController } from './api/patient.controller';
+import { AdminUsersController } from './api/admin-users.controller';
 import { UserBaseService } from './services/users.service';
 import { FamilyMemberService } from './services/family.service';
 import { DoctorService } from './services/doctor.service';
@@ -14,7 +15,12 @@ import { Patient } from './entities/patient.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, Doctor, FamilyMember, Patient])],
-  controllers: [FamilyMemberController, DoctorController, PatientController],
+  controllers: [
+    FamilyMemberController,
+    DoctorController,
+    PatientController,
+    AdminUsersController,
+  ],
   providers: [
     UserBaseService,
     FamilyMemberService,

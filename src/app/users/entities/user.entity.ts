@@ -27,7 +27,7 @@ export class User {
   @Column({ nullable: true })
   address?: string;
 
-  @Column({ type: 'enum', enum: UserType })
+  @Column({ type: 'text' })
   type: UserType;
 
   @CreateDateColumn()
@@ -35,6 +35,6 @@ export class User {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @Column({ type: 'enum', enum: Status })
+  @Column({ type: 'text' })
   status: Status;
 }

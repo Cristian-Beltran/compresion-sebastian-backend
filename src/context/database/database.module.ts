@@ -3,21 +3,19 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import config from 'src/context/shared/config';
 import { ConfigType } from '@nestjs/config';
 import { MigrationController } from './database.controller';
+import * as path from 'path';
 @Global()
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
       inject: [config.KEY],
       useFactory: (configService: ConfigType<typeof config>) => {
-        const { user, host, name, password, port } = configService.database;
+        const dbPath = path.resolve(process.cwd(), configService.database.sqlitePath);
         return {
-          type: 'postgres',
-          host,
-          port,
-          username: user,
-          password,
-          database: name,
+          type: 'sqlite',
+          database: dbPath,
           autoLoadEntities: true,
+          synchronize: true,
         };
       },
     }),

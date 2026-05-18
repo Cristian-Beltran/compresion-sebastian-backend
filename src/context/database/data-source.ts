@@ -1,18 +1,11 @@
 import { DataSource } from 'typeorm';
-import { config } from 'dotenv';
-import { ConfigService } from '@nestjs/config';
 import * as path from 'path';
 
-config();
-const configService = new ConfigService();
+const SQLITE_PATH = 'data/app.db';
 
 export default new DataSource({
-  type: 'postgres',
-  username: configService.get('DB_USER'),
-  password: configService.get('DB_PASSWORD'),
-  database: configService.get('DB_NAME'),
-  port: configService.get('DB_PORT'),
-  host: configService.get('DB_HOST'),
+  type: 'sqlite',
+  database: path.resolve(process.cwd(), SQLITE_PATH),
   synchronize: false,
   logging: true,
   entities: [

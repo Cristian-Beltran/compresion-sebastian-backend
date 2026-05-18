@@ -21,7 +21,7 @@ export class Session {
   @CreateDateColumn()
   startedAt: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   endedAt?: Date;
 
   @Column('float')

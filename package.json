@@ -23,7 +23,7 @@
     "migration:run": "npm run typeorm -- migration:run",
     "migration:run:prod": "typeorm-ts-node-commonjs -d dist/context/database/data-source.js migration:run",
     "migration:show": "npm run typeorm -- migration:show",
-    "seed:admin": "ts-node -r tsconfig-paths/register src/seed/doctor.ts"
+    "seed:admin": "ts-node -r tsconfig-paths/register src/seed/admin.ts"
   },
   "dependencies": {
     "@fast-csv/format": "^5.0.5",
@@ -62,6 +62,7 @@
     "resend": "^4.7.0",
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.1",
+    "sqlite3": "^5.1.7",
     "typeorm": "^0.3.24",
     "zod": "^4.1.5"
   },

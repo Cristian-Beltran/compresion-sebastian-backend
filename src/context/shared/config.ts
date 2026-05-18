@@ -1,14 +1,25 @@
 import { registerAs } from '@nestjs/config';
+
+const APP_SETTINGS = {
+  jwtSecret: 'vasoflow-dev-secret',
+  sqlitePath: 'data/app.db',
+  mqttUrl: 'mqtt://broker.hivemq.com:1883',
+  mqttTopicRoot: 'vasoflow',
+  mqttDeviceId: 'esp32-01',
+};
+
 export default registerAs('config', () => {
   return {
     database: {
-      name: process.env.DB_NAME,
-      port: parseInt(process.env.DB_PORT) ?? 5432,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      host: process.env.DB_HOST,
+      type: 'sqlite',
+      sqlitePath: APP_SETTINGS.sqlitePath,
     },
-    apiKey: process.env.API_KEY,
-    jwtSecret: process.env.JWT_SECRET,
+    apiKey: '',
+    jwtSecret: APP_SETTINGS.jwtSecret,
+    mqtt: {
+      url: APP_SETTINGS.mqttUrl,
+      topicRoot: APP_SETTINGS.mqttTopicRoot,
+      deviceId: APP_SETTINGS.mqttDeviceId,
+    },
   };
 });

@@ -10,6 +10,7 @@ import { User } from '../entities/user.entity';
 import { CreateUserBaseDto } from '../dtos/user.dto';
 import { Status } from 'src/context/shared/models/active.model';
 import * as bcrypt from 'bcrypt';
+import { UserType } from '../enums/user-type';
 
 @Injectable()
 export class UserBaseService {
@@ -59,5 +60,21 @@ export class UserBaseService {
     const user = await this.findById(id);
     user.status = status;
     return this.userRepository.save(user);
+  }
+
+  async changePassword(id: string, password: string): Promise<User> {
+    const user = await this.findById(id);
+    user.password = await bcrypt.hash(password, 10);
+    return this.userRepository.save(user);
+  }
+
+  async findAdminsAndDoctors(): Promise<User[]> {
+    return this.userRepository.find({
+      where: [
+        { type: UserType.ADMIN, status: Not(Status.DELETED) },
+        { type: UserType.DOCTOR, status: Not(Status.DELETED) },
+      ],
+      order: { createdAt: 'DESC' },
+    });
   }
 }
