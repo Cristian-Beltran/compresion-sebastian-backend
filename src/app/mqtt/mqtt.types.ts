@@ -1,5 +1,5 @@
 export type DeviceTelemetry = {
-  timestamp: string;
+  timestamp: string | number;
   state: string;
   pressureKpa: number;
   targetPressureKpa: number;
@@ -12,7 +12,17 @@ export type DeviceTelemetry = {
   pumpOn?: boolean;
   valveClosed?: boolean;
   holdRemainingMs?: number;
+  configuredHoldTimeMs?: number;
+  configuredReleaseTimeMs?: number;
+  configuredCycleTarget?: number;
   error?: string;
+};
+
+export type DeviceAck = {
+  timestamp?: string | number;
+  command?: string;
+  result?: string;
+  durationMs?: number;
 };
 
 export type DeviceStatus = {
@@ -28,4 +38,8 @@ export type DeviceStatus = {
   holdRemainingMs?: number;
   updatedAt: string;
   error?: string;
+  configuredHoldTimeMs?: number;
+  configuredReleaseTimeMs?: number;
+  configuredCycleTarget?: number;
+  lastAck?: DeviceAck | null;
 };

@@ -85,24 +85,51 @@ export class DoctorController {
       id: row.id,
       fullname: row.user?.fullname ?? '',
       status: row.user?.status,
+      age: row.age,
+      sex: row.sex,
+      treatedLimb: row.treatedLimb,
+      mobilityLevel: row.mobilityLevel,
+      registeredAt: row.user?.createdAt,
     }));
   }
 
   @Post('patients')
-  createPatient(@Body() dto: { fullname: string }) {
+  createPatient(
+    @Body()
+    dto: {
+      fullname: string;
+      age?: number;
+      sex?: 'masculino' | 'femenino' | 'otro';
+      treatedLimb?: string;
+      mobilityLevel?: 'independiente' | 'movilidad_reducida' | 'inmovil';
+    },
+  ) {
     const slug = dto.fullname.toLowerCase().trim().replace(/\s+/g, '.');
     return this.patientService.create({
       fullname: dto.fullname,
       email: `${slug}.${Date.now()}@patient.local`,
       password: 'Patient123*',
       address: 'N/A',
+      age: dto.age,
+      sex: dto.sex,
+      treatedLimb: dto.treatedLimb,
+      mobilityLevel: dto.mobilityLevel,
     });
   }
 
   @Put('patients/:id')
   updatePatient(
     @Param('id') id: string,
-    @Body() dto: { fullname?: string; email?: string; address?: string },
+    @Body()
+    dto: {
+      fullname?: string;
+      email?: string;
+      address?: string;
+      age?: number;
+      sex?: 'masculino' | 'femenino' | 'otro';
+      treatedLimb?: string;
+      mobilityLevel?: 'independiente' | 'movilidad_reducida' | 'inmovil';
+    },
   ) {
     return this.patientService.update(id, dto);
   }
@@ -127,6 +154,10 @@ export class DoctorController {
       patientId: dto.patientId,
       configId: config.id,
       intensity: dto.intensity,
+      targetPressureKpa: config.targetPressureKpa,
+      holdTimeSeconds: config.holdTimeSeconds,
+      releaseTimeSeconds: config.releaseTimeSeconds,
+      cycleTarget: config.cycleTarget,
     });
   }
 

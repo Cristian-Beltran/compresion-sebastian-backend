@@ -22,17 +22,35 @@ export class TreatmentsService {
   constructor(private readonly mqttService: MqttService) {}
 
   findAll() {
+    this.syncActiveCycleCount();
     return this.treatments;
   }
 
   findActive() {
+    this.syncActiveCycleCount();
     return this.treatments.find((item) => item.status === 'running') ?? null;
+  }
+
+  private syncActiveCycleCount() {
+    const active = this.treatments.find((item) => item.status === 'running');
+    if (!active) {
+      return;
+    }
+
+    const cycleIndex = Number(this.mqttService.getStatus()?.cycleIndex ?? 0);
+    if (!Number.isNaN(cycleIndex) && cycleIndex >= 0) {
+      active.cycleCount = cycleIndex;
+    }
   }
 
   start(dto: {
     patientId: string;
     configId: string;
     intensity?: 'low' | 'medium' | 'high';
+    targetPressureKpa?: number;
+    holdTimeSeconds?: number;
+    releaseTimeSeconds?: number;
+    cycleTarget?: number;
   }) {
     const active = this.findActive();
     if (active) {
@@ -51,16 +69,29 @@ export class TreatmentsService {
     };
 
     this.treatments.unshift(item);
+
+    this.mqttService.publishCommand('SET_CONFIG', {
+      targetPressureKpa: dto.targetPressureKpa,
+      holdTimeMs:
+        dto.holdTimeSeconds === undefined ? undefined : Math.round(dto.holdTimeSeconds * 1000),
+      releaseTimeMs:
+        dto.releaseTimeSeconds === undefined ? undefined : Math.round(dto.releaseTimeSeconds * 1000),
+      cycleTarget: dto.cycleTarget,
+    });
+
     this.mqttService.publishCommand('START_TREATMENT', {
-      treatmentId: item.id,
-      patientId: item.patientId,
-      configId: item.configId,
-      intensity: item.intensity,
+      targetPressureKpa: dto.targetPressureKpa,
+      holdTimeMs:
+        dto.holdTimeSeconds === undefined ? undefined : Math.round(dto.holdTimeSeconds * 1000),
+      releaseTimeMs:
+        dto.releaseTimeSeconds === undefined ? undefined : Math.round(dto.releaseTimeSeconds * 1000),
+      cycleTarget: dto.cycleTarget,
     });
     return item;
   }
 
   stop(id: string) {
+    this.syncActiveCycleCount();
     const item = this.treatments.find((t) => t.id === id);
     if (!item) throw new NotFoundException('Treatment not found');
     if (item.status !== 'running') {

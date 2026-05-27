@@ -3,7 +3,7 @@ import { ConfigType } from '@nestjs/config';
 import { Inject } from '@nestjs/common';
 import config from 'src/context/shared/config';
 import mqtt, { MqttClient } from 'mqtt';
-import { DeviceStatus, DeviceTelemetry } from './mqtt.types';
+import { DeviceAck, DeviceStatus, DeviceTelemetry } from './mqtt.types';
 import { LogsService } from '../logs/logs.service';
 import { AlertsService } from '../alerts/alerts.service';
 
@@ -24,7 +24,11 @@ export class MqttService implements OnModuleInit {
     pumpOn: false,
     valveClosed: false,
     holdRemainingMs: 0,
+    configuredHoldTimeMs: 0,
+    configuredReleaseTimeMs: 0,
+    configuredCycleTarget: 0,
     updatedAt: new Date().toISOString(),
+    lastAck: null,
   };
 
   constructor(
@@ -98,8 +102,24 @@ export class MqttService implements OnModuleInit {
               payload.holdRemainingMs === undefined
                 ? 0
                 : Number(payload.holdRemainingMs),
-            updatedAt: payload.timestamp ?? new Date().toISOString(),
+            configuredHoldTimeMs:
+              payload.configuredHoldTimeMs === undefined
+                ? this.status.configuredHoldTimeMs ?? 0
+                : Number(payload.configuredHoldTimeMs),
+            configuredReleaseTimeMs:
+              payload.configuredReleaseTimeMs === undefined
+                ? this.status.configuredReleaseTimeMs ?? 0
+                : Number(payload.configuredReleaseTimeMs),
+            configuredCycleTarget:
+              payload.configuredCycleTarget === undefined
+                ? this.status.configuredCycleTarget ?? 0
+                : Number(payload.configuredCycleTarget),
+            updatedAt:
+              payload.timestamp === undefined
+                ? new Date().toISOString()
+                : String(payload.timestamp),
             error: payload.error,
+            lastAck: this.status.lastAck ?? null,
           };
         }
 
@@ -108,7 +128,10 @@ export class MqttService implements OnModuleInit {
             ...this.status,
             connected: true,
             state: payload.state ?? this.status.state,
-            updatedAt: payload.timestamp ?? new Date().toISOString(),
+            updatedAt:
+              payload.timestamp === undefined
+                ? new Date().toISOString()
+                : String(payload.timestamp),
           };
         }
 
@@ -128,6 +151,11 @@ export class MqttService implements OnModuleInit {
         }
 
         if (topic === ackTopic) {
+          this.status = {
+            ...this.status,
+            lastAck: payload as DeviceAck,
+            updatedAt: new Date().toISOString(),
+          };
           void this.logsService.create({
             level: 'info',
             source: 'ack',

@@ -5,6 +5,7 @@ import {
   OneToOne,
   JoinColumn,
   ManyToMany,
+  Column,
 } from 'typeorm';
 import { User } from './user.entity';
 import { FamilyMember } from './family.entity';
@@ -20,4 +21,16 @@ export class Patient {
 
   @ManyToMany(() => FamilyMember, (family) => family.patients)
   familyMembers: FamilyMember[];
+
+  @Column({ type: 'int', nullable: true })
+  age?: number;
+
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  sex?: 'masculino' | 'femenino' | 'otro';
+
+  @Column({ type: 'varchar', length: 60, nullable: true })
+  treatedLimb?: string;
+
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  mobilityLevel?: 'independiente' | 'movilidad_reducida' | 'inmovil';
 }

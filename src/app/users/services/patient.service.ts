@@ -30,6 +30,10 @@ export class PatientService {
     });
     const patient = this.patientRepository.create({
       user,
+      age: dto.age,
+      sex: dto.sex,
+      treatedLimb: dto.treatedLimb,
+      mobilityLevel: dto.mobilityLevel,
     });
     return this.patientRepository.save(patient);
   }
@@ -57,6 +61,19 @@ export class PatientService {
       email: dto.email,
       address: dto.address,
     });
+
+    if (dto.age !== undefined) {
+      patient.age = dto.age;
+    }
+    if (dto.sex !== undefined) {
+      patient.sex = dto.sex;
+    }
+    if (dto.treatedLimb !== undefined) {
+      patient.treatedLimb = dto.treatedLimb;
+    }
+    if (dto.mobilityLevel !== undefined) {
+      patient.mobilityLevel = dto.mobilityLevel;
+    }
 
     await this.patientRepository.save(patient);
     return await this.findOne(id);
