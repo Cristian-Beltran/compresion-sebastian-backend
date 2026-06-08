@@ -5,7 +5,7 @@ import {
   Param,
   Post,
 } from '@nestjs/common';
-import { TreatmentsService } from './treatments.service';
+import { StartTreatmentDto, TreatmentsService } from './treatments.service';
 
 @Controller('treatments')
 export class TreatmentsController {
@@ -17,7 +17,7 @@ export class TreatmentsController {
   }
 
   @Post('start')
-  start(@Body() dto: { patientId: string; configId: string }) {
+  start(@Body() dto: StartTreatmentDto) {
     return this.treatmentsService.start(dto);
   }
 

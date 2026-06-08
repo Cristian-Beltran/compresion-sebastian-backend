@@ -29,8 +29,8 @@ export class DoctorController {
   @Get('dashboard/summary')
   async dashboardSummary() {
     const patients = await this.patientService.findAll();
-    const activeTreatment = this.treatmentsService.findActive();
-    const latestTreatments = this.treatmentsService.findAll().slice(0, 5);
+    const activeTreatment = await this.treatmentsService.findActive();
+    const latestTreatments = (await this.treatmentsService.findAll()).slice(0, 5);
     const patientsMap = new Map(
       patients.map((patient) => [patient.id, patient.user?.fullname ?? patient.id]),
     );
@@ -69,12 +69,12 @@ export class DoctorController {
   }
 
   @Get('dashboard/live')
-  dashboardLive() {
+  async dashboardLive() {
     return {
       status: this.mqttService.getStatus(),
       telemetry: this.mqttService.getLastTelemetry(),
       history: this.mqttService.getTelemetryHistory(),
-      activeTreatment: this.treatmentsService.findActive(),
+      activeTreatment: await this.treatmentsService.findActive(),
     };
   }
 
@@ -87,8 +87,6 @@ export class DoctorController {
       status: row.user?.status,
       age: row.age,
       sex: row.sex,
-      treatedLimb: row.treatedLimb,
-      mobilityLevel: row.mobilityLevel,
       registeredAt: row.user?.createdAt,
     }));
   }
@@ -100,8 +98,6 @@ export class DoctorController {
       fullname: string;
       age?: number;
       sex?: 'masculino' | 'femenino' | 'otro';
-      treatedLimb?: string;
-      mobilityLevel?: 'independiente' | 'movilidad_reducida' | 'inmovil';
     },
   ) {
     const slug = dto.fullname.toLowerCase().trim().replace(/\s+/g, '.');
@@ -112,8 +108,6 @@ export class DoctorController {
       address: 'N/A',
       age: dto.age,
       sex: dto.sex,
-      treatedLimb: dto.treatedLimb,
-      mobilityLevel: dto.mobilityLevel,
     });
   }
 
@@ -127,8 +121,6 @@ export class DoctorController {
       address?: string;
       age?: number;
       sex?: 'masculino' | 'femenino' | 'otro';
-      treatedLimb?: string;
-      mobilityLevel?: 'independiente' | 'movilidad_reducida' | 'inmovil';
     },
   ) {
     return this.patientService.update(id, dto);
@@ -146,14 +138,41 @@ export class DoctorController {
 
   @Post('treatments/start')
   async startTreatment(
-    @Body() dto: { patientId: string; intensity: 'low' | 'medium' | 'high' },
+    @Body()
+    dto: {
+      patientId: string;
+      intensity?: 'low' | 'medium' | 'high' | 'custom';
+      treatmentZone: 'pantorrilla_izquierda' | 'pantorrilla_derecha';
+      mobilityLevel: 'independiente' | 'movilidad_reducida' | 'inmovil';
+      targetPressureKpa?: number;
+      holdTimeSeconds?: number;
+      releaseTimeSeconds?: number;
+      cycleTarget?: number;
+    },
   ) {
+    if (dto.intensity === 'custom') {
+      return this.treatmentsService.start({
+        patientId: dto.patientId,
+        configId: 'custom',
+        intensity: 'custom',
+        treatmentZone: dto.treatmentZone,
+        mobilityLevel: dto.mobilityLevel,
+        targetPressureKpa: dto.targetPressureKpa,
+        holdTimeSeconds: dto.holdTimeSeconds,
+        releaseTimeSeconds: dto.releaseTimeSeconds,
+        cycleTarget: dto.cycleTarget,
+      });
+    }
+
+    if (!dto.intensity) return null;
     const config = await this.configurationsService.findByIntensity(dto.intensity);
     if (!config) return null;
     return this.treatmentsService.start({
       patientId: dto.patientId,
       configId: config.id,
       intensity: dto.intensity,
+      treatmentZone: dto.treatmentZone,
+      mobilityLevel: dto.mobilityLevel,
       targetPressureKpa: config.targetPressureKpa,
       holdTimeSeconds: config.holdTimeSeconds,
       releaseTimeSeconds: config.releaseTimeSeconds,
@@ -168,7 +187,7 @@ export class DoctorController {
 
   @Get('treatments/history')
   async history(@Query('patientId') patientId?: string, @Query('status') status?: string) {
-    let rows = this.treatmentsService.findAll();
+    let rows = await this.treatmentsService.findAll();
     if (patientId) rows = rows.filter((x) => x.patientId === patientId);
     if (status) rows = rows.filter((x) => x.status === status);
 

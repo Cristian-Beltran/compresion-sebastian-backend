@@ -19,12 +19,13 @@ export class PatientService {
   async create(dto: CreatePatientDto): Promise<Patient> {
     dto.type = UserType.PATIENT;
     dto.status = Status.ACTIVE;
+    const slug = dto.fullname.toLowerCase().trim().replace(/\s+/g, '.');
 
     const user = await this.userBaseService.createUser({
       fullname: dto.fullname,
-      email: dto.email,
-      password: dto.password,
-      address: dto.address,
+      email: dto.email ?? `${slug}.${Date.now()}@patient.local`,
+      password: dto.password ?? 'Patient123*',
+      address: dto.address ?? 'N/A',
       type: UserType.PATIENT,
       status: Status.ACTIVE,
     });
@@ -32,8 +33,6 @@ export class PatientService {
       user,
       age: dto.age,
       sex: dto.sex,
-      treatedLimb: dto.treatedLimb,
-      mobilityLevel: dto.mobilityLevel,
     });
     return this.patientRepository.save(patient);
   }
@@ -47,7 +46,7 @@ export class PatientService {
 
   async findOne(id: string): Promise<Patient> {
     const patient = await this.patientRepository.findOne({
-      where: { user: { id } },
+      where: [{ id }, { user: { id } }],
       relations: ['user'],
     });
     if (!patient) throw new NotFoundException(`Patient ${id} not found`);
@@ -68,13 +67,6 @@ export class PatientService {
     if (dto.sex !== undefined) {
       patient.sex = dto.sex;
     }
-    if (dto.treatedLimb !== undefined) {
-      patient.treatedLimb = dto.treatedLimb;
-    }
-    if (dto.mobilityLevel !== undefined) {
-      patient.mobilityLevel = dto.mobilityLevel;
-    }
-
     await this.patientRepository.save(patient);
     return await this.findOne(id);
   }
@@ -92,7 +84,8 @@ export class PatientService {
     return patient;
   }
   async updateStatus(id: string, status: Status): Promise<Patient> {
-    await this.userBaseService.updateStatus(id, status);
+    const patient = await this.findOne(id);
+    await this.userBaseService.updateStatus(patient.user.id, status);
     return await this.findOne(id);
   }
 }

@@ -1,38 +1,52 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { randomUUID } from 'crypto';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { MqttService } from '../mqtt/mqtt.service';
+import {
+  MobilityLevel,
+  TreatmentEntity,
+  TreatmentIntensity,
+  TreatmentZone,
+} from './entities/treatment.entity';
 
-export type TreatmentStatus = 'running' | 'completed' | 'aborted';
-
-export type Treatment = {
-  id: string;
+export type StartTreatmentDto = {
   patientId: string;
-  configId: string;
-  intensity?: 'low' | 'medium' | 'high';
-  startedAt: Date;
-  endedAt: Date | null;
-  cycleCount: number;
-  status: TreatmentStatus;
+  configId?: string | null;
+  intensity: TreatmentIntensity;
+  treatmentZone: TreatmentZone;
+  mobilityLevel: MobilityLevel;
+  targetPressureKpa?: number;
+  holdTimeSeconds?: number;
+  releaseTimeSeconds?: number;
+  cycleTarget?: number;
 };
 
 @Injectable()
 export class TreatmentsService {
-  private readonly treatments: Treatment[] = [];
+  constructor(
+    private readonly mqttService: MqttService,
+    @InjectRepository(TreatmentEntity)
+    private readonly treatmentRepo: Repository<TreatmentEntity>,
+  ) {}
 
-  constructor(private readonly mqttService: MqttService) {}
-
-  findAll() {
-    this.syncActiveCycleCount();
-    return this.treatments;
+  async findAll() {
+    await this.syncActiveCycleCount();
+    return this.treatmentRepo.find({ order: { startedAt: 'DESC' } });
   }
 
-  findActive() {
-    this.syncActiveCycleCount();
-    return this.treatments.find((item) => item.status === 'running') ?? null;
+  async findActive() {
+    await this.syncActiveCycleCount();
+    return this.treatmentRepo.findOne({
+      where: { status: 'running' },
+      order: { startedAt: 'DESC' },
+    });
   }
 
-  private syncActiveCycleCount() {
-    const active = this.treatments.find((item) => item.status === 'running');
+  private async syncActiveCycleCount() {
+    const active = await this.treatmentRepo.findOne({
+      where: { status: 'running' },
+      order: { startedAt: 'DESC' },
+    });
     if (!active) {
       return;
     }
@@ -40,35 +54,45 @@ export class TreatmentsService {
     const cycleIndex = Number(this.mqttService.getStatus()?.cycleIndex ?? 0);
     if (!Number.isNaN(cycleIndex) && cycleIndex >= 0) {
       active.cycleCount = cycleIndex;
+      await this.treatmentRepo.save(active);
     }
   }
 
-  start(dto: {
-    patientId: string;
-    configId: string;
-    intensity?: 'low' | 'medium' | 'high';
-    targetPressureKpa?: number;
-    holdTimeSeconds?: number;
-    releaseTimeSeconds?: number;
-    cycleTarget?: number;
-  }) {
-    const active = this.findActive();
+  async start(dto: StartTreatmentDto) {
+    if (!dto.patientId || !dto.treatmentZone || !dto.mobilityLevel) {
+      throw new BadRequestException('patientId, treatmentZone and mobilityLevel are required');
+    }
+    if (
+      dto.intensity === 'custom' &&
+      (!dto.targetPressureKpa ||
+        !dto.holdTimeSeconds ||
+        !dto.releaseTimeSeconds ||
+        !dto.cycleTarget)
+    ) {
+      throw new BadRequestException('Custom treatments require pressure, hold, release and cycles');
+    }
+
+    const active = await this.findActive();
     if (active) {
       throw new ConflictException('There is already a running treatment');
     }
 
-    const item: Treatment = {
-      id: randomUUID(),
+    const item = this.treatmentRepo.create({
       patientId: dto.patientId,
-      configId: dto.configId,
+      configId: dto.configId ?? (dto.intensity === 'custom' ? 'custom' : null),
       intensity: dto.intensity,
-      startedAt: new Date(),
+      treatmentZone: dto.treatmentZone,
+      mobilityLevel: dto.mobilityLevel,
+      targetPressureKpa: dto.targetPressureKpa,
+      holdTimeSeconds: dto.holdTimeSeconds,
+      releaseTimeSeconds: dto.releaseTimeSeconds,
+      cycleTarget: dto.cycleTarget,
       endedAt: null,
       cycleCount: 0,
       status: 'running',
-    };
+    });
 
-    this.treatments.unshift(item);
+    const saved = await this.treatmentRepo.save(item);
 
     this.mqttService.publishCommand('SET_CONFIG', {
       targetPressureKpa: dto.targetPressureKpa,
@@ -87,19 +111,20 @@ export class TreatmentsService {
         dto.releaseTimeSeconds === undefined ? undefined : Math.round(dto.releaseTimeSeconds * 1000),
       cycleTarget: dto.cycleTarget,
     });
-    return item;
+    return saved;
   }
 
-  stop(id: string) {
-    this.syncActiveCycleCount();
-    const item = this.treatments.find((t) => t.id === id);
+  async stop(id: string) {
+    await this.syncActiveCycleCount();
+    const item = await this.treatmentRepo.findOne({ where: { id } });
     if (!item) throw new NotFoundException('Treatment not found');
     if (item.status !== 'running') {
       throw new ConflictException('Treatment is not running');
     }
     item.status = 'completed';
     item.endedAt = new Date();
+    const saved = await this.treatmentRepo.save(item);
     this.mqttService.publishCommand('STOP_TREATMENT', { treatmentId: item.id });
-    return item;
+    return saved;
   }
 }

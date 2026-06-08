@@ -18,7 +18,7 @@ export class MqttService implements OnModuleInit {
     state: 'OFFLINE',
     pressureKpa: 0,
     targetPressureKpa: 0,
-    filmPercent: 0,
+    forceNewtons: 0,
     temperatureC: null,
     cycleIndex: 0,
     pumpOn: false,
@@ -89,7 +89,7 @@ export class MqttService implements OnModuleInit {
             state: payload.state ?? 'UNKNOWN',
             pressureKpa: Number(payload.pressureKpa ?? 0),
             targetPressureKpa: Number(payload.targetPressureKpa ?? 0),
-            filmPercent: Number(payload.filmPercent ?? 0),
+            forceNewtons: Number(payload.forceNewtons ?? 0),
             temperatureC:
               payload.temperatureC === null || payload.temperatureC === undefined
                 ? null

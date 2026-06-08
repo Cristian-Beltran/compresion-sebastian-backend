@@ -6,7 +6,7 @@ export type DeviceTelemetry = {
   filmRaw: number;
   filmBaseline: number;
   filmDelta: number;
-  filmPercent: number;
+  forceNewtons: number;
   temperatureC: number | null;
   cycleIndex?: number;
   pumpOn?: boolean;
@@ -30,7 +30,7 @@ export type DeviceStatus = {
   state: string;
   pressureKpa: number;
   targetPressureKpa: number;
-  filmPercent: number;
+  forceNewtons: number;
   temperatureC: number | null;
   cycleIndex?: number;
   pumpOn?: boolean;

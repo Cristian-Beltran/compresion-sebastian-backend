@@ -42,9 +42,11 @@ export class UserBaseService {
   }
 
   async updateUser(id: string, dto: Partial<CreateUserBaseDto>): Promise<User> {
-    const userRepeatEmail = await this.findByEmail(dto.email);
-    if (userRepeatEmail && userRepeatEmail.id !== id)
-      throw new BadRequestException('Email already exists');
+    if (dto.email) {
+      const userRepeatEmail = await this.findByEmail(dto.email);
+      if (userRepeatEmail && userRepeatEmail.id !== id)
+        throw new BadRequestException('Email already exists');
+    }
     const user = await this.findById(id);
     Object.assign(user, dto);
     return this.userRepository.save(user);

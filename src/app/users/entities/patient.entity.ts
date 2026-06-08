@@ -27,10 +27,4 @@ export class Patient {
 
   @Column({ type: 'varchar', length: 30, nullable: true })
   sex?: 'masculino' | 'femenino' | 'otro';
-
-  @Column({ type: 'varchar', length: 60, nullable: true })
-  treatedLimb?: string;
-
-  @Column({ type: 'varchar', length: 30, nullable: true })
-  mobilityLevel?: 'independiente' | 'movilidad_reducida' | 'inmovil';
 }
