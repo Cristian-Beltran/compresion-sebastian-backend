@@ -1,13 +1,39 @@
-export type DeviceTelemetry = {
-  timestamp: string | number;
+export type DeviceGroupTelemetry = {
+  groupId: number;
+  enabled: boolean;
   state: string;
   pressureKpa: number;
   targetPressureKpa: number;
-  filmRaw: number;
-  filmBaseline: number;
-  filmDelta: number;
   forceNewtons: number;
-  temperatureC: number | null;
+  cycleIndex: number;
+  cycleTarget: number;
+  pumpOn: boolean;
+  valveClosed: boolean;
+  inflateTimeMs: number;
+  holdTimeMs: number;
+  releaseTimeMs: number;
+  holdRemainingMs: number;
+  pressureRaw?: number;
+  pressureTareRaw?: number;
+  pressureCountsPerKpa?: number;
+  pressureSensorAvailable?: boolean;
+  forceRaw?: number;
+  forceBaseline?: number;
+  forceScaleMultiplier?: number;
+  forceSensorAvailable?: boolean;
+};
+
+export type DeviceTelemetry = {
+  timestamp: string | number;
+  state: string;
+  online?: boolean;
+  activeMask?: number;
+  treatmentId?: string;
+  groups?: DeviceGroupTelemetry[];
+  // Campos del firmware v1 conservados para telemetría histórica y simuladores.
+  pressureKpa?: number;
+  targetPressureKpa?: number;
+  forceNewtons?: number;
   cycleIndex?: number;
   pumpOn?: boolean;
   valveClosed?: boolean;
@@ -15,6 +41,15 @@ export type DeviceTelemetry = {
   configuredHoldTimeMs?: number;
   configuredReleaseTimeMs?: number;
   configuredCycleTarget?: number;
+  temperatureC: number | null;
+  temperature1C?: number | null;
+  temperature2C?: number | null;
+  temperature1Valid?: boolean;
+  temperature2Valid?: boolean;
+  fanPowerPercent?: number;
+  wifiRssi?: number;
+  maintenanceMode?: boolean;
+  calibrationVersion?: number;
   error?: string;
 };
 
@@ -23,10 +58,23 @@ export type DeviceAck = {
   command?: string;
   result?: string;
   durationMs?: number;
+  treatmentId?: string;
+  requestId?: string;
+  groupId?: number;
+  sensorType?: 'pressure' | 'force';
+  rawMean?: number;
+  zeroRaw?: number;
+  referenceRaw?: number;
+  coefficient?: number;
+  priorCoefficient?: number;
+  message?: string;
+  [key: string]: unknown;
 };
 
 export type DeviceStatus = {
   connected: boolean;
+  online: boolean;
+  brokerConnected: boolean;
   state: string;
   pressureKpa: number;
   targetPressureKpa: number;
@@ -42,4 +90,15 @@ export type DeviceStatus = {
   configuredReleaseTimeMs?: number;
   configuredCycleTarget?: number;
   lastAck?: DeviceAck | null;
+  activeMask?: number;
+  treatmentRunning?: boolean;
+  treatmentId?: string;
+  groups?: DeviceGroupTelemetry[];
+  lastSeenAt?: string | null;
+  maintenanceMode?: boolean;
+  wifiRssi?: number;
+  temperature1C?: number | null;
+  temperature2C?: number | null;
+  fanPowerPercent?: number;
+  calibrationVersion?: number;
 };

@@ -4,9 +4,14 @@ import { TreatmentsController } from './treatments.controller';
 import { MqttModule } from '../mqtt/mqtt.module';
 import { TreatmentsService } from './treatments.service';
 import { TreatmentEntity } from './entities/treatment.entity';
+import { LogsModule } from '../logs/logs.module';
 
 @Module({
-  imports: [MqttModule, TypeOrmModule.forFeature([TreatmentEntity])],
+  imports: [
+    MqttModule,
+    LogsModule,
+    TypeOrmModule.forFeature([TreatmentEntity]),
+  ],
   controllers: [TreatmentsController],
   providers: [TreatmentsService],
   exports: [TreatmentsService],

@@ -1,25 +1,24 @@
 import { registerAs } from '@nestjs/config';
 
-const APP_SETTINGS = {
-  jwtSecret: 'vasoflow-dev-secret',
-  sqlitePath: 'data/app.db',
-  mqttUrl: 'mqtt://broker.hivemq.com:1883',
-  mqttTopicRoot: 'vasoflow',
-  mqttDeviceId: 'esp32-01',
-};
-
 export default registerAs('config', () => {
   return {
+    port: parseInt(process.env.PORT ?? '3001', 10),
     database: {
       type: 'sqlite',
-      sqlitePath: APP_SETTINGS.sqlitePath,
+      sqlitePath: process.env.SQLITE_PATH ?? 'data/sebastian.sqlite',
     },
-    apiKey: '',
-    jwtSecret: APP_SETTINGS.jwtSecret,
+    apiKey: process.env.API_KEY ?? 'local-api-key',
+    jwtSecret: process.env.JWT_SECRET ?? 'sebastian-dev-jwt-secret',
     mqtt: {
-      url: APP_SETTINGS.mqttUrl,
-      topicRoot: APP_SETTINGS.mqttTopicRoot,
-      deviceId: APP_SETTINGS.mqttDeviceId,
+      url: process.env.MQTT_URL ?? 'mqtt://localhost:1883',
+      user: process.env.MQTT_USER ?? '',
+      password: process.env.MQTT_PASSWORD ?? '',
+      topicRoot: process.env.MQTT_TOPIC_ROOT ?? 'sebastian',
+      deviceId: process.env.MQTT_DEVICE_ID ?? 'esp32-01',
     },
+    corsOrigins: process.env.CORS_ORIGINS
+      ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
+      : ['http://localhost:5173', 'http://localhost:4173'],
+    migrationSecret: process.env.MIGRATION_SECRET ?? '',
   };
 });

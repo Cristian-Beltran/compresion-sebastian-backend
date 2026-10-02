@@ -9,9 +9,9 @@ import { Status } from 'src/context/shared/models/active.model';
 import { UserType } from 'src/app/users/enums/user-type';
 
 const ADMIN_SEED = {
-  email: 'admin@vasoflow.local',
+  email: 'admin@sebastian.local',
   password: 'Admin123*',
-  fullname: 'Administrador VasoFlow',
+  fullname: 'Administrador Sebastian',
 };
 
 async function bootstrap() {

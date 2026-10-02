@@ -17,6 +17,7 @@ export class ConfigurationsController {
     @Body()
     body: {
       targetPressureKpa?: number;
+      inflateTimeSeconds?: number;
       holdTimeSeconds?: number;
       releaseTimeSeconds?: number;
       cycleTarget?: number;

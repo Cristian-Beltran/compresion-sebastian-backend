@@ -1,4 +1,10 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 export type IntensityType = 'low' | 'medium' | 'high';
 
@@ -12,6 +18,9 @@ export class TherapyConfig {
 
   @Column({ type: 'float' })
   targetPressureKpa: number;
+
+  @Column({ type: 'int', default: 15 })
+  inflateTimeSeconds: number;
 
   @Column({ type: 'int' })
   holdTimeSeconds: number;

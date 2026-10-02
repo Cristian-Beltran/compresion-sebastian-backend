@@ -1,11 +1,7 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { StartTreatmentDto, TreatmentsService } from './treatments.service';
+import { UserPayload } from 'src/context/shared/decorators/user.decorator';
+import { PayloadToken } from 'src/context/shared/models/token.model';
 
 @Controller('treatments')
 export class TreatmentsController {
@@ -17,12 +13,12 @@ export class TreatmentsController {
   }
 
   @Post('start')
-  start(@Body() dto: StartTreatmentDto) {
-    return this.treatmentsService.start(dto);
+  start(@UserPayload() user: PayloadToken, @Body() dto: StartTreatmentDto) {
+    return this.treatmentsService.start(dto, user?.sub);
   }
 
   @Post(':id/stop')
-  stop(@Param('id') id: string) {
-    return this.treatmentsService.stop(id);
+  stop(@UserPayload() user: PayloadToken, @Param('id') id: string) {
+    return this.treatmentsService.stop(id, user?.sub);
   }
 }

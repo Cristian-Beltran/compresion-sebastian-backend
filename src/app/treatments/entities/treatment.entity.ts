@@ -8,8 +8,24 @@ import {
 
 export type TreatmentStatus = 'running' | 'completed' | 'aborted';
 export type TreatmentIntensity = 'low' | 'medium' | 'high' | 'custom';
-export type TreatmentZone = 'pantorrilla_izquierda' | 'pantorrilla_derecha';
+export type TreatmentZone =
+  | 'pantorrilla_izquierda'
+  | 'pantorrilla_derecha'
+  | 'pie_izquierdo'
+  | 'pie_derecho';
 export type MobilityLevel = 'independiente' | 'movilidad_reducida' | 'inmovil';
+
+export type TreatmentGroupConfig = {
+  groupId: 1 | 2 | 3 | 4;
+  zone: TreatmentZone;
+  intensity: TreatmentIntensity;
+  targetPressureKpa: number;
+  inflateTimeSeconds: number;
+  holdTimeSeconds: number;
+  releaseTimeSeconds: number;
+  cycleTarget: number;
+  cycleCount?: number;
+};
 
 @Entity('treatments')
 export class TreatmentEntity {
@@ -42,6 +58,12 @@ export class TreatmentEntity {
 
   @Column({ type: 'int', nullable: true })
   cycleTarget?: number | null;
+
+  /** Configuración independiente de los grupos seleccionados (1..4).
+   * Nullable mantiene compatibles todos los tratamientos históricos.
+   */
+  @Column({ type: 'simple-json', nullable: true })
+  groups?: TreatmentGroupConfig[] | null;
 
   @CreateDateColumn({ type: 'datetime' })
   startedAt: Date;

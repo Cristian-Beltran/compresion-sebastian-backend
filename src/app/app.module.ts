@@ -14,6 +14,7 @@ import { AlertsModule } from './alerts/alerts.module';
 import { TreatmentsModule } from './treatments/treatments.module';
 import { MqttModule } from './mqtt/mqtt.module';
 import { DoctorModule } from './doctor/doctor.module';
+import { CalibrationsModule } from './calibrations/calibrations.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { DoctorModule } from './doctor/doctor.module';
     TreatmentsModule,
     MqttModule,
     DoctorModule,
+    CalibrationsModule,
   ],
 })
 export class AppModule {}
