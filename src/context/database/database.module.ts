@@ -15,7 +15,7 @@ import * as path from 'path';
           type: 'sqlite',
           database: dbPath,
           autoLoadEntities: true,
-          synchronize: true,
+          synchronize: process.env.NODE_ENV !== 'production',
         };
       },
     }),
