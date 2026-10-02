@@ -1,0 +1,30 @@
+[Unit]
+Description=Sebastian compression backend NestJS
+After=network-online.target mosquitto.service
+Wants=network-online.target mosquitto.service
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=cristian
+WorkingDirectory=/srv/apps/sebastian/compresion-sebastian-backend
+
+Environment=NODE_ENV=production
+Environment=NODE_OPTIONS=--max-old-space-size=512
+EnvironmentFile=/srv/apps/sebastian/compresion-sebastian-backend/.env
+
+ExecStart=/usr/bin/node /srv/apps/sebastian/compresion-sebastian-backend/dist/main.js
+
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+KillMode=control-group
+MemoryHigh=600M
+MemoryMax=800M
+TasksMax=256
+
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
