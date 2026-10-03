@@ -146,6 +146,33 @@ export class DeviceController {
     );
   }
 
+  @Post('fan/mode')
+  setFanMode(
+    @UserPayload() user: PayloadToken,
+    @Body() body: { mode: 'pid' | 'manual' },
+  ) {
+    this.assertAdminOrTechnical(user);
+    return this.mqttService.publishCommandAndWait(
+      'SET_FAN_MODE',
+      { mode: body.mode },
+      { actorUserId: user.sub, category: 'control' },
+    );
+  }
+
+  @Post('fan/speed')
+  setFanSpeed(
+    @UserPayload() user: PayloadToken,
+    @Body() body: { percent: number },
+  ) {
+    this.assertAdminOrTechnical(user);
+    const percent = Math.min(100, Math.max(0, Number(body.percent)));
+    return this.mqttService.publishCommandAndWait(
+      'SET_FAN_SPEED',
+      { percent },
+      { actorUserId: user.sub, category: 'control' },
+    );
+  }
+
   private assertMaintenanceReady() {
     const status = this.mqttService.getStatus();
     if (!status.online)

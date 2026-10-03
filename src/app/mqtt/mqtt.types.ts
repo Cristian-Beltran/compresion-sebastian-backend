@@ -49,6 +49,7 @@ export type DeviceTelemetry = {
   fanPowerPercent?: number;
   wifiRssi?: number;
   maintenanceMode?: boolean;
+  fanManualMode?: boolean;
   calibrationVersion?: number;
   error?: string;
 };

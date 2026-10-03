@@ -33,6 +33,9 @@ export class PatientService {
       user,
       age: dto.age,
       sex: dto.sex,
+      document: dto.document,
+      phone: dto.phone,
+      diagnosis: dto.diagnosis,
     });
     return this.patientRepository.save(patient);
   }
@@ -66,6 +69,15 @@ export class PatientService {
     }
     if (dto.sex !== undefined) {
       patient.sex = dto.sex;
+    }
+    if (dto.document !== undefined) {
+      patient.document = dto.document;
+    }
+    if (dto.phone !== undefined) {
+      patient.phone = dto.phone;
+    }
+    if (dto.diagnosis !== undefined) {
+      patient.diagnosis = dto.diagnosis;
     }
     await this.patientRepository.save(patient);
     return await this.findOne(id);

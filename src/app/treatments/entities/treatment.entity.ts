@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-export type TreatmentStatus = 'running' | 'completed' | 'aborted';
+export type TreatmentStatus = 'running' | 'completed' | 'aborted' | 'interrupted';
 export type TreatmentIntensity = 'low' | 'medium' | 'high' | 'custom';
 export type TreatmentZone =
   | 'pantorrilla_izquierda'
@@ -73,6 +73,9 @@ export class TreatmentEntity {
 
   @Column({ type: 'int', default: 0 })
   cycleCount: number;
+
+  @Column({ type: 'text', nullable: true })
+  medicalReport?: string | null;
 
   @Column({ type: 'varchar', length: 20, default: 'running' })
   status: TreatmentStatus;

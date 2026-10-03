@@ -27,4 +27,13 @@ export class Patient {
 
   @Column({ type: 'varchar', length: 30, nullable: true })
   sex?: 'masculino' | 'femenino' | 'otro';
+
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  document?: string;
+
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  phone?: string;
+
+  @Column({ type: 'text', nullable: true })
+  diagnosis?: string;
 }

@@ -265,26 +265,27 @@ export class TreatmentsService {
     return groups;
   }
 
-  async stop(id: string, actorUserId?: string) {
+  async stop(id: string, actorUserId?: string, medicalReport?: string, interrupted = false) {
     await this.syncActiveCycleCount();
     const item = await this.treatmentRepo.findOne({ where: { id } });
     if (!item) throw new NotFoundException('Treatment not found');
     if (item.status !== 'running') {
       throw new ConflictException('Treatment is not running');
     }
-    item.status = 'completed';
+    item.status = interrupted ? 'interrupted' : 'completed';
     item.endedAt = new Date();
+    item.medicalReport = medicalReport ?? null;
     const saved = await this.treatmentRepo.save(item);
     this.mqttService.publishCommand('STOP_TREATMENT', { treatmentId: item.id });
     await this.logsService.create({
       level: 'info',
       source: 'treatment',
       category: 'session',
-      eventType: 'session_stopped',
+      eventType: interrupted ? 'session_interrupted' : 'session_stopped',
       treatmentId: item.id,
       actorUserId,
-      message: 'Sesión detenida por un usuario',
-      metadata: { cycleCount: saved.cycleCount, groups: saved.groups },
+      message: interrupted ? 'Sesión interrumpida por un usuario' : 'Sesión detenida por un usuario',
+      metadata: { cycleCount: saved.cycleCount, groups: saved.groups, medicalReport: !!medicalReport },
     });
     return saved;
   }

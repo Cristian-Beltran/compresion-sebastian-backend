@@ -101,6 +101,9 @@ export class DoctorController {
       status: row.user?.status,
       age: row.age,
       sex: row.sex,
+      document: row.document,
+      phone: row.phone,
+      diagnosis: row.diagnosis,
       registeredAt: row.user?.createdAt,
     }));
   }
@@ -112,6 +115,9 @@ export class DoctorController {
       fullname: string;
       age?: number;
       sex?: 'masculino' | 'femenino' | 'otro';
+      document?: string;
+      phone?: string;
+      diagnosis?: string;
     },
   ) {
     const slug = dto.fullname.toLowerCase().trim().replace(/\s+/g, '.');
@@ -122,6 +128,9 @@ export class DoctorController {
       address: 'N/A',
       age: dto.age,
       sex: dto.sex,
+      document: dto.document,
+      phone: dto.phone,
+      diagnosis: dto.diagnosis,
     });
   }
 
@@ -135,6 +144,9 @@ export class DoctorController {
       address?: string;
       age?: number;
       sex?: 'masculino' | 'femenino' | 'otro';
+      document?: string;
+      phone?: string;
+      diagnosis?: string;
     },
   ) {
     return this.patientService.update(id, dto);
@@ -224,8 +236,12 @@ export class DoctorController {
   }
 
   @Post('treatments/:id/stop')
-  stopTreatment(@UserPayload() user: PayloadToken, @Param('id') id: string) {
-    return this.treatmentsService.stop(id, user.sub);
+  stopTreatment(
+    @UserPayload() user: PayloadToken,
+    @Param('id') id: string,
+    @Body() body: { medicalReport?: string; interrupted?: boolean },
+  ) {
+    return this.treatmentsService.stop(id, user.sub, body?.medicalReport, body?.interrupted);
   }
 
   @Get('treatments/history')

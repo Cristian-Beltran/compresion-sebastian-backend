@@ -47,4 +47,16 @@ export class CreatePatientDto {
   @IsOptional()
   @IsIn(['masculino', 'femenino', 'otro'])
   sex?: 'masculino' | 'femenino' | 'otro';
+
+  @IsOptional()
+  @IsString()
+  document?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  diagnosis?: string;
 }
