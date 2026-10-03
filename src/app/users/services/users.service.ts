@@ -70,6 +70,11 @@ export class UserBaseService {
     return this.userRepository.save(user);
   }
 
+  async verifyPassword(id: string, password: string): Promise<boolean> {
+    const user = await this.findById(id);
+    return bcrypt.compare(password, user.password);
+  }
+
   async findAdminsDoctorsAndTechnicals(): Promise<User[]> {
     return this.userRepository.find({
       where: [

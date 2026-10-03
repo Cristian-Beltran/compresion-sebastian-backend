@@ -13,11 +13,22 @@ import { JwtAuthGuard } from 'src/context/shared/guards/jwt-auth.guard';
 import { UserBaseService } from '../services/users.service';
 import { UserType } from '../enums/user-type';
 import { Status } from 'src/context/shared/models/active.model';
+import { UserPayload } from 'src/context/shared/decorators/user.decorator';
+import { PayloadToken } from 'src/context/shared/models/token.model';
 
 @UseGuards(JwtAuthGuard)
 @Controller('admin/users')
 export class AdminUsersController {
   constructor(private readonly usersService: UserBaseService) {}
+
+  @Post('verify-password')
+  async verifyPassword(
+    @UserPayload() user: PayloadToken,
+    @Body() body: { password: string },
+  ) {
+    const isValid = await this.usersService.verifyPassword(user.sub, body.password);
+    return { valid: isValid };
+  }
 
   @Get()
   findAll() {
