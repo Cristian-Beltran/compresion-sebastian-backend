@@ -70,11 +70,12 @@ export class UserBaseService {
     return this.userRepository.save(user);
   }
 
-  async findAdminsAndDoctors(): Promise<User[]> {
+  async findAdminsDoctorsAndTechnicals(): Promise<User[]> {
     return this.userRepository.find({
       where: [
         { type: UserType.ADMIN, status: Not(Status.DELETED) },
         { type: UserType.DOCTOR, status: Not(Status.DELETED) },
+        { type: UserType.TECHNICAL, status: Not(Status.DELETED) },
       ],
       order: { createdAt: 'DESC' },
     });

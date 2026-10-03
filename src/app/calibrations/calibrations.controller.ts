@@ -27,7 +27,7 @@ export class CalibrationsController {
     @Query('groupId') groupId?: string,
     @Query('sensorType') sensorType?: string,
   ) {
-    this.assertAdmin(user);
+    this.assertAdminOrTechnical(user);
     return this.calibrationsService.findAll(
       Number(page) || 1,
       Number(pageSize) || 20,
@@ -38,7 +38,7 @@ export class CalibrationsController {
 
   @Get('latest')
   latest(@UserPayload() user: PayloadToken) {
-    this.assertAdmin(user);
+    this.assertAdminOrTechnical(user);
     return this.calibrationsService.findLatest();
   }
 
@@ -47,7 +47,7 @@ export class CalibrationsController {
     @UserPayload() user: PayloadToken,
     @Body() body: { groupId: number; sensorType: SensorType; notes?: string },
   ) {
-    this.assertAdmin(user);
+    this.assertAdminOrTechnical(user);
     return this.calibrationsService.tare(body, user.sub);
   }
 
@@ -62,19 +62,19 @@ export class CalibrationsController {
       notes?: string;
     },
   ) {
-    this.assertAdmin(user);
+    this.assertAdminOrTechnical(user);
     return this.calibrationsService.calibrateReference(body, user.sub);
   }
 
   @Post(':id/reapply')
   reapply(@UserPayload() user: PayloadToken, @Param('id') id: string) {
-    this.assertAdmin(user);
+    this.assertAdminOrTechnical(user);
     return this.calibrationsService.reapply(id, user.sub);
   }
 
-  private assertAdmin(user: PayloadToken) {
-    if (!user || user.type !== 'admin') {
-      throw new ForbiddenException('Sólo administradores');
+  private assertAdminOrTechnical(user: PayloadToken) {
+    if (!user || !['admin', 'technical'].includes(user.type)) {
+      throw new ForbiddenException('Sólo administradores o técnicos');
     }
   }
 }

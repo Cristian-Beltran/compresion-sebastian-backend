@@ -38,6 +38,9 @@ export class SystemLog {
   actorUserId?: string | null;
 
   @Column({ type: 'text', nullable: true })
+  actorRole?: string | null;
+
+  @Column({ type: 'text', nullable: true })
   requestId?: string | null;
 
   @Column({ type: 'simple-json', nullable: true })

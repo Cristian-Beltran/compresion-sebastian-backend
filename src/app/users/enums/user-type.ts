@@ -1,6 +1,7 @@
 export enum UserType {
   ADMIN = 'admin',
-  PATIENT = 'patient',
   DOCTOR = 'doctor',
+  TECHNICAL = 'technical',
+  PATIENT = 'patient',
   FAMILY = 'family',
 }

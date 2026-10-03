@@ -37,6 +37,40 @@ export class LogsController {
     });
   }
 
+  @Get('technical')
+  searchTechnical(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('search') search?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ) {
+    return this.logsService.searchTechnical({
+      page: page ? Number(page) : undefined,
+      pageSize: pageSize ? Number(pageSize) : undefined,
+      search,
+      dateFrom,
+      dateTo,
+    });
+  }
+
+  @Get('admin')
+  searchAdmin(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('search') search?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ) {
+    return this.logsService.searchAdmin({
+      page: page ? Number(page) : undefined,
+      pageSize: pageSize ? Number(pageSize) : undefined,
+      search,
+      dateFrom,
+      dateTo,
+    });
+  }
+
   @Post()
   create(
     @Body()
@@ -46,6 +80,7 @@ export class LogsController {
       message: string;
       category?: string;
       eventType?: string;
+      actorRole?: string;
       metadata?: Record<string, unknown>;
     },
   ) {

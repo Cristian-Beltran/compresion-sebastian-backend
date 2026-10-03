@@ -21,7 +21,7 @@ export class AdminUsersController {
 
   @Get()
   findAll() {
-    return this.usersService.findAdminsAndDoctors();
+    return this.usersService.findAdminsDoctorsAndTechnicals();
   }
 
   @Post()
@@ -31,16 +31,21 @@ export class AdminUsersController {
       fullname: string;
       email: string;
       password: string;
-      role: 'admin' | 'doctor';
+      role: 'admin' | 'doctor' | 'technical';
       address?: string;
     },
   ) {
+    const typeMap: Record<string, UserType> = {
+      admin: UserType.ADMIN,
+      doctor: UserType.DOCTOR,
+      technical: UserType.TECHNICAL,
+    };
     return this.usersService.createUser({
       fullname: body.fullname,
       email: body.email,
       password: body.password,
       address: body.address,
-      type: body.role === 'admin' ? UserType.ADMIN : UserType.DOCTOR,
+      type: typeMap[body.role] ?? UserType.DOCTOR,
       status: Status.ACTIVE,
     });
   }

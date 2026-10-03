@@ -21,6 +21,9 @@ export class AuthService {
       where: { email: loginDto.email, status: Status.ACTIVE },
     });
     if (!user) throw new UnauthorizedException('Invalid access');
+    if (user.type === UserType.PATIENT || user.type === UserType.FAMILY) {
+      throw new UnauthorizedException('Este tipo de usuario no tiene acceso al sistema');
+    }
     const isMatch = await bcrypt.compare(loginDto.password, user.password);
     if (!isMatch) throw new UnauthorizedException('Invalid access');
     return {

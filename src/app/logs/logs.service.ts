@@ -49,6 +49,7 @@ export class LogsService implements OnModuleInit, OnModuleDestroy {
     groupId?: number;
     treatmentId?: string;
     actorUserId?: string;
+    actorRole?: string;
     requestId?: string;
     metadata?: Record<string, unknown>;
   }) {
@@ -126,5 +127,93 @@ export class LogsService implements OnModuleInit, OnModuleDestroy {
         summaryEvent: 'telemetry_summary',
       })
       .execute();
+  }
+
+  async searchTechnical(query: LogQuery) {
+    const page = Math.max(Number(query.page) || 1, 1);
+    const pageSize = Math.min(Math.max(Number(query.pageSize) || 20, 1), 100);
+    const builder = this.logsRepo
+      .createQueryBuilder('log')
+      .orderBy('log.createdAt', 'DESC')
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .where("log.actorRole = 'technical'")
+      .andWhere(
+        "log.category IN (:...categories)",
+        {
+          categories: [
+            'control',
+            'calibration',
+            'maintenance',
+            'sensor_test',
+            'protocol_modified',
+          ],
+        },
+      );
+
+    if (query.search?.trim()) {
+      builder.andWhere(
+        "(LOWER(log.message) LIKE :search OR LOWER(log.source) LIKE :search)",
+        { search: `%${query.search.trim().toLowerCase()}%` },
+      );
+    }
+    if (query.dateFrom) {
+      builder.andWhere('log.createdAt >= :dateFrom', {
+        dateFrom: new Date(query.dateFrom),
+      });
+    }
+    if (query.dateTo) {
+      builder.andWhere('log.createdAt <= :dateTo', {
+        dateTo: new Date(query.dateTo),
+      });
+    }
+
+    const [items, total] = await builder.getManyAndCount();
+    return { items, total, page, pageSize };
+  }
+
+  async searchAdmin(query: LogQuery) {
+    const page = Math.max(Number(query.page) || 1, 1);
+    const pageSize = Math.min(Math.max(Number(query.pageSize) || 20, 1), 100);
+    const builder = this.logsRepo
+      .createQueryBuilder('log')
+      .orderBy('log.createdAt', 'DESC')
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .where(
+        "log.category IN (:...categories)",
+        {
+          categories: [
+            'patient_created',
+            'patient_updated',
+            'session_started',
+            'session_stopped',
+            'session_completed',
+            'user_created',
+            'user_status_changed',
+            'password_reset',
+          ],
+        },
+      );
+
+    if (query.search?.trim()) {
+      builder.andWhere(
+        "(LOWER(log.message) LIKE :search OR LOWER(log.source) LIKE :search)",
+        { search: `%${query.search.trim().toLowerCase()}%` },
+      );
+    }
+    if (query.dateFrom) {
+      builder.andWhere('log.createdAt >= :dateFrom', {
+        dateFrom: new Date(query.dateFrom),
+      });
+    }
+    if (query.dateTo) {
+      builder.andWhere('log.createdAt <= :dateTo', {
+        dateTo: new Date(query.dateTo),
+      });
+    }
+
+    const [items, total] = await builder.getManyAndCount();
+    return { items, total, page, pageSize };
   }
 }

@@ -30,7 +30,7 @@ export class DeviceController {
 
   @Get('admin-overview')
   async overview(@UserPayload() user: PayloadToken) {
-    this.assertAdmin(user);
+    this.assertAdminOrTechnical(user);
     const recentEvents = await this.logsService.search({
       page: 1,
       pageSize: 8,
@@ -45,7 +45,7 @@ export class DeviceController {
 
   @Post('maintenance/enter')
   enterMaintenance(@UserPayload() user: PayloadToken) {
-    this.assertAdmin(user);
+    this.assertAdminOrTechnical(user);
     const status = this.mqttService.getStatus();
     if (!status.online)
       throw new ConflictException('El ESP32 está desconectado');
@@ -61,7 +61,7 @@ export class DeviceController {
 
   @Post('maintenance/exit')
   exitMaintenance(@UserPayload() user: PayloadToken) {
-    this.assertAdmin(user);
+    this.assertAdminOrTechnical(user);
     return this.mqttService.publishCommandAndWait(
       'EXIT_MAINTENANCE',
       {},
@@ -71,7 +71,7 @@ export class DeviceController {
 
   @Post('emergency-stop')
   emergencyStop(@UserPayload() user: PayloadToken) {
-    this.assertAdmin(user);
+    this.assertAdminOrTechnical(user);
     return this.mqttService.publishCommandAndWait(
       'EMERGENCY_STOP',
       {},
@@ -87,7 +87,7 @@ export class DeviceController {
     @Body()
     body: { pumpOn?: boolean; valveClosed?: boolean; durationMs?: number },
   ) {
-    this.assertAdmin(user);
+    this.assertAdminOrTechnical(user);
     const groupId = this.parseGroup(groupIdText);
     const status = this.assertMaintenanceReady();
     const durationMs = Math.min(
@@ -117,7 +117,7 @@ export class DeviceController {
     @UserPayload() user: PayloadToken,
     @Param('groupId') groupIdText: string,
   ) {
-    this.assertAdmin(user);
+    this.assertAdminOrTechnical(user);
     const groupId = this.parseGroup(groupIdText);
     this.assertMaintenanceReady();
     return this.mqttService.publishCommandAndWait(
@@ -128,13 +128,12 @@ export class DeviceController {
     );
   }
 
-  /** Compatibilidad limitada: ya no permite accionar actuadores arbitrariamente. */
   @Post('manual-command')
   manualCommand(
     @UserPayload() user: PayloadToken,
     @Body() body: { command: string; payload?: Record<string, unknown> },
   ) {
-    this.assertAdmin(user);
+    this.assertAdminOrTechnical(user);
     if (!['RESET', 'EMERGENCY_STOP'].includes(body.command)) {
       throw new BadRequestException(
         'Use los endpoints de mantenimiento tipados',
@@ -171,6 +170,12 @@ export class DeviceController {
   private assertAdmin(user: PayloadToken) {
     if (!user || user.type !== 'admin') {
       throw new ForbiddenException('Sólo administradores');
+    }
+  }
+
+  private assertAdminOrTechnical(user: PayloadToken) {
+    if (!user || !['admin', 'technical'].includes(user.type)) {
+      throw new ForbiddenException('Sólo administradores o técnicos');
     }
   }
 }
