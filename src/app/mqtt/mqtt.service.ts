@@ -346,8 +346,8 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       eventType: online ? 'device_online' : 'device_offline',
       deviceId: this.appConfig.mqtt.deviceId,
       message: online
-        ? 'ESP32 conectado y enviando datos'
-        : 'ESP32 sin conexión',
+        ? 'Equipo conectado y enviando datos'
+        : 'Equipo sin conexión',
       metadata: { reason },
     });
   }
@@ -411,7 +411,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       treatmentId: context.treatmentId,
       actorUserId: context.actorUserId,
       requestId,
-      message: `Comando ${command} enviado al ESP32`,
+      message: `Comando ${command} enviado al equipo`,
       metadata: body,
     });
     return { topic, message: body, requestId };
@@ -437,10 +437,10 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
           treatmentId: context.treatmentId,
           actorUserId: context.actorUserId,
           requestId,
-          message: `El ESP32 no confirmó ${command} dentro del tiempo esperado`,
+          message: `El equipo no confirmó ${command} dentro del tiempo esperado`,
         });
         reject(
-          new ServiceUnavailableException('El ESP32 no respondió al comando'),
+          new ServiceUnavailableException('El equipo no respondió al comando'),
         );
       }, timeoutMs);
       this.pendingCommands.set(requestId, { command, resolve, reject, timer });

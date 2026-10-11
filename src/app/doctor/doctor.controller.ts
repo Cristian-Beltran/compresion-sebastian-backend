@@ -46,7 +46,9 @@ export class DoctorController {
 
     const enrichedTreatments = latestTreatments.map((item) => ({
       ...item,
-      patientName: patientsMap.get(item.patientId) ?? item.patientId,
+      patientName: item.sessionType === 'manual'
+        ? 'Sin paciente asociado'
+        : (patientsMap.get(item.patientId ?? '') ?? item.patientId),
       durationSeconds: Math.max(
         0,
         Math.floor(
@@ -57,12 +59,21 @@ export class DoctorController {
       ),
     }));
 
+    const allTreatments = await this.treatmentsService.findAll();
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekStart = new Date(todayStart);
+    weekStart.setDate(todayStart.getDate() - ((todayStart.getDay() + 6) % 7));
+    const startedAfter = (date: Date) =>
+      allTreatments.filter((item) => new Date(item.startedAt) >= date).length;
+
     const activeTreatmentEnriched = activeTreatment
       ? {
           ...activeTreatment,
           patientName:
-            patientsMap.get(activeTreatment.patientId) ??
-            activeTreatment.patientId,
+            activeTreatment.sessionType === 'manual'
+              ? 'Sin paciente asociado'
+              : (patientsMap.get(activeTreatment.patientId ?? '') ?? activeTreatment.patientId),
           durationSeconds: Math.max(
             0,
             Math.floor(
@@ -79,6 +90,9 @@ export class DoctorController {
       patientsCount: patients.length,
       latestPatients: patients.slice(0, 5),
       latestTreatments: enrichedTreatments,
+      treatmentsToday: startedAfter(todayStart),
+      treatmentsThisWeek: startedAfter(weekStart),
+      lastTreatment: enrichedTreatments[0] ?? null,
     };
   }
 
@@ -170,10 +184,11 @@ export class DoctorController {
     @UserPayload() user: PayloadToken,
     @Body()
     dto: {
-      patientId: string;
+      patientId?: string;
+      manual?: boolean;
       intensity?: 'low' | 'medium' | 'high' | 'custom';
       treatmentZone?: 'pantorrilla_izquierda' | 'pantorrilla_derecha';
-      mobilityLevel: 'independiente' | 'movilidad_reducida' | 'inmovil';
+      mobilityLevel?: 'independiente' | 'movilidad_reducida' | 'inmovil';
       targetPressureKpa?: number;
       holdTimeSeconds?: number;
       releaseTimeSeconds?: number;
@@ -186,6 +201,7 @@ export class DoctorController {
       return this.treatmentsService.start(
         {
           patientId: dto.patientId,
+          sessionType: dto.manual ? 'manual' : 'patient',
           configId: 'multi-group-v2',
           intensity: dto.intensity ?? 'custom',
           mobilityLevel: dto.mobilityLevel,
@@ -199,6 +215,7 @@ export class DoctorController {
       return this.treatmentsService.start(
         {
           patientId: dto.patientId,
+          sessionType: dto.manual ? 'manual' : 'patient',
           configId: 'custom',
           intensity: 'custom',
           treatmentZone: dto.treatmentZone,
@@ -221,6 +238,7 @@ export class DoctorController {
     return this.treatmentsService.start(
       {
         patientId: dto.patientId,
+        sessionType: dto.manual ? 'manual' : 'patient',
         configId: config.id,
         intensity: dto.intensity,
         treatmentZone: dto.treatmentZone,
@@ -262,7 +280,9 @@ export class DoctorController {
     );
     return rows.map((item) => ({
       ...item,
-      patientName: patientsMap.get(item.patientId) ?? item.patientId,
+      patientName: item.sessionType === 'manual'
+        ? 'Sin paciente asociado'
+        : (patientsMap.get(item.patientId ?? '') ?? item.patientId),
       durationSeconds: Math.max(
         0,
         Math.floor(

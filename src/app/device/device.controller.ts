@@ -48,7 +48,7 @@ export class DeviceController {
     this.assertAdminOrTechnical(user);
     const status = this.mqttService.getStatus();
     if (!status.online)
-      throw new ConflictException('El ESP32 está desconectado');
+      throw new ConflictException('El equipo está desconectado');
     if (status.treatmentRunning) {
       throw new ConflictException('Hay una sesión clínica activa');
     }
@@ -85,18 +85,15 @@ export class DeviceController {
     @UserPayload() user: PayloadToken,
     @Param('groupId') groupIdText: string,
     @Body()
-    body: { pumpOn?: boolean; valveClosed?: boolean; durationMs?: number },
+    body: { pumpOn?: boolean; valveClosed?: boolean; durationMs?: number; persistent?: boolean },
   ) {
     this.assertAdminOrTechnical(user);
     const groupId = this.parseGroup(groupIdText);
-    const status = this.assertMaintenanceReady();
+    const status = this.assertManualControlReady();
     const durationMs = Math.min(
       Math.max(Number(body.durationMs) || 500, 100),
       5000,
     );
-    if (body.pumpOn && body.valveClosed === false) {
-      throw new BadRequestException('La bomba requiere la válvula cerrada');
-    }
     return this.mqttService
       .publishCommandAndWait(
         'MANUAL_ACTUATE',
@@ -105,6 +102,7 @@ export class DeviceController {
           pumpOn: Boolean(body.pumpOn),
           valveClosed: Boolean(body.valveClosed),
           durationMs,
+          persistent: body.persistent !== false,
         },
         { actorUserId: user.sub, category: 'control', groupId },
         Math.max(4000, durationMs + 2500),
@@ -176,13 +174,20 @@ export class DeviceController {
   private assertMaintenanceReady() {
     const status = this.mqttService.getStatus();
     if (!status.online)
-      throw new ConflictException('El ESP32 está desconectado');
+      throw new ConflictException('El equipo está desconectado');
     if (status.treatmentRunning) {
       throw new ConflictException('Hay una sesión clínica activa');
     }
     if (!status.maintenanceMode) {
       throw new ConflictException('Active primero el modo mantenimiento');
     }
+    return status;
+  }
+
+  private assertManualControlReady() {
+    const status = this.mqttService.getStatus();
+    if (!status.online) throw new ConflictException('El equipo está desconectado');
+    if (status.treatmentRunning) throw new ConflictException('Hay una sesión clínica activa');
     return status;
   }
 

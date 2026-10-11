@@ -14,6 +14,7 @@ export type TreatmentZone =
   | 'pie_izquierdo'
   | 'pie_derecho';
 export type MobilityLevel = 'independiente' | 'movilidad_reducida' | 'inmovil';
+export type TreatmentSessionType = 'patient' | 'manual';
 
 export type TreatmentGroupConfig = {
   groupId: 1 | 2 | 3 | 4;
@@ -32,8 +33,11 @@ export class TreatmentEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 36 })
-  patientId: string;
+  @Column({ type: 'varchar', length: 36, nullable: true })
+  patientId?: string | null;
+
+  @Column({ type: 'varchar', length: 12, default: 'patient' })
+  sessionType: TreatmentSessionType;
 
   @Column({ type: 'varchar', length: 36, nullable: true })
   configId?: string | null;
@@ -44,8 +48,8 @@ export class TreatmentEntity {
   @Column({ type: 'varchar', length: 30 })
   treatmentZone: TreatmentZone;
 
-  @Column({ type: 'varchar', length: 30 })
-  mobilityLevel: MobilityLevel;
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  mobilityLevel?: MobilityLevel | null;
 
   @Column({ type: 'float', nullable: true })
   targetPressureKpa?: number | null;

@@ -115,4 +115,36 @@ describe('TreatmentsService multi-group sessions', () => {
       }),
     ).rejects.toThrow('Compressor groups cannot be repeated');
   });
+
+  it('persists a manual session without a patient and marks the device command', async () => {
+    await service.start({
+      sessionType: 'manual',
+      intensity: 'custom',
+      groups: [
+        {
+          groupId: 2,
+          zone: 'pantorrilla_derecha',
+          intensity: 'custom',
+          targetPressureKpa: 5,
+          inflateTimeSeconds: 15,
+          holdTimeSeconds: 10,
+          releaseTimeSeconds: 5,
+          cycleTarget: 8,
+        },
+      ],
+    });
+
+    expect(repository.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        patientId: undefined,
+        mobilityLevel: undefined,
+        sessionType: 'manual',
+      }),
+    );
+    expect(mqtt.publishCommandAndWait).toHaveBeenCalledWith(
+      'START_TREATMENT',
+      { treatmentId: 'treatment-1', manual: true, activeMask: 2 },
+      expect.objectContaining({ treatmentId: 'treatment-1' }),
+    );
+  });
 });

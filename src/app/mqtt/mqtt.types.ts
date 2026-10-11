@@ -1,6 +1,8 @@
 export type DeviceGroupTelemetry = {
   groupId: number;
+  zone?: string;
   enabled: boolean;
+  active?: boolean;
   state: string;
   pressureKpa: number;
   targetPressureKpa: number;
@@ -28,6 +30,11 @@ export type DeviceTelemetry = {
   state: string;
   online?: boolean;
   activeMask?: number;
+  runningMask?: number;
+  paused?: boolean;
+  batchIndex?: number;
+  batchCount?: number;
+  sessionMode?: 'patient' | 'manual' | 'local';
   treatmentId?: string;
   groups?: DeviceGroupTelemetry[];
   // Campos del firmware v1 conservados para telemetría histórica y simuladores.
@@ -92,6 +99,11 @@ export type DeviceStatus = {
   configuredCycleTarget?: number;
   lastAck?: DeviceAck | null;
   activeMask?: number;
+  runningMask?: number;
+  paused?: boolean;
+  batchIndex?: number;
+  batchCount?: number;
+  sessionMode?: 'patient' | 'manual' | 'local';
   treatmentRunning?: boolean;
   treatmentId?: string;
   groups?: DeviceGroupTelemetry[];

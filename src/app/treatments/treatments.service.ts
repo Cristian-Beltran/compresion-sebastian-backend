@@ -13,15 +13,17 @@ import {
   TreatmentEntity,
   TreatmentGroupConfig,
   TreatmentIntensity,
+  TreatmentSessionType,
   TreatmentZone,
 } from './entities/treatment.entity';
 
 export type StartTreatmentDto = {
-  patientId: string;
+  patientId?: string | null;
+  sessionType?: TreatmentSessionType;
   configId?: string | null;
   intensity: TreatmentIntensity;
   treatmentZone?: TreatmentZone;
-  mobilityLevel: MobilityLevel;
+  mobilityLevel?: MobilityLevel | null;
   targetPressureKpa?: number;
   holdTimeSeconds?: number;
   releaseTimeSeconds?: number;
@@ -103,7 +105,8 @@ export class TreatmentsService {
   }
 
   async start(dto: StartTreatmentDto, actorUserId?: string) {
-    if (!dto.patientId || !dto.mobilityLevel) {
+    const sessionType = dto.sessionType ?? 'patient';
+    if (sessionType === 'patient' && (!dto.patientId || !dto.mobilityLevel)) {
       throw new BadRequestException('patientId and mobilityLevel are required');
     }
     const groups = this.normalizeGroups(dto);
@@ -123,6 +126,7 @@ export class TreatmentsService {
     const primaryGroup = groups[0];
     const item = this.treatmentRepo.create({
       patientId: dto.patientId,
+      sessionType,
       configId: dto.configId ?? (dto.intensity === 'custom' ? 'custom' : null),
       intensity: dto.intensity,
       treatmentZone: primaryGroup.zone,
@@ -160,6 +164,7 @@ export class TreatmentsService {
         'START_TREATMENT',
         {
           treatmentId: saved.id,
+          ...(sessionType === 'manual' ? { manual: true } : {}),
           activeMask: groups.reduce(
             (mask, group) => mask | (1 << (group.groupId - 1)),
             0,
@@ -179,7 +184,7 @@ export class TreatmentsService {
         actorUserId,
         requestId: ack.requestId,
         message: `Sesión iniciada con ${groups.length} grupo(s) de compresión`,
-        metadata: { patientId: dto.patientId, groups },
+        metadata: { patientId: dto.patientId, sessionType, groups },
       });
     } catch (error) {
       saved.status = 'aborted';

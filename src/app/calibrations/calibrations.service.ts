@@ -228,7 +228,7 @@ export class CalibrationsService {
   private assertMaintenanceReady() {
     const status = this.mqttService.getStatus();
     if (!status.online)
-      throw new ConflictException('El ESP32 está desconectado');
+      throw new ConflictException('El equipo está desconectado');
     if (status.treatmentRunning) {
       throw new ConflictException('No se puede calibrar durante una sesión');
     }
