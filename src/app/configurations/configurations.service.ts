@@ -56,7 +56,11 @@ export class ConfigurationsService implements OnModuleInit {
     return this.configsRepo.findOne({ where: { intensity } });
   }
 
-  async update(intensity: IntensityType, values: Partial<TherapyConfig>) {
+  async update(
+    intensity: IntensityType,
+    values: Partial<TherapyConfig>,
+    editor: string,
+  ) {
     const row = await this.configsRepo.findOne({ where: { intensity } });
     if (!row) return null;
     row.targetPressureKpa = values.targetPressureKpa ?? row.targetPressureKpa;
@@ -66,6 +70,8 @@ export class ConfigurationsService implements OnModuleInit {
     row.releaseTimeSeconds =
       values.releaseTimeSeconds ?? row.releaseTimeSeconds;
     row.cycleTarget = values.cycleTarget ?? row.cycleTarget;
+    row.lastEditedBy = editor;
+    row.lastEditedAt = new Date();
     return this.configsRepo.save(row);
   }
 }

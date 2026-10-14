@@ -76,7 +76,13 @@ describe('TreatmentsService multi-group sessions', () => {
         ]),
       }),
     );
-    expect(mqtt.publishCommand).toHaveBeenCalledTimes(4);
+    expect(mqtt.publishCommandAndWait).toHaveBeenCalledTimes(5);
+    expect(mqtt.publishCommandAndWait).toHaveBeenNthCalledWith(
+      1,
+      'SET_GROUP_CONFIG',
+      expect.objectContaining({ groupId: 1, enabled: 1, cycleTarget: 8 }),
+      expect.objectContaining({ treatmentId: 'treatment-1', groupId: 1 }),
+    );
     expect(mqtt.publishCommandAndWait).toHaveBeenCalledWith(
       'START_TREATMENT',
       { treatmentId: 'treatment-1', activeMask: 9 },

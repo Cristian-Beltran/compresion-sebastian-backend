@@ -11,6 +11,9 @@ export class Alert {
   @Column({ type: 'text' })
   message: string;
 
+  @Column({ type: 'text', nullable: true })
+  component?: string | null;
+
   @Column({ type: 'boolean', default: true })
   active: boolean;
 

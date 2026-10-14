@@ -36,4 +36,10 @@ export class TherapyConfig {
 
   @UpdateDateColumn({ type: 'datetime' })
   updatedAt: Date;
+
+  @Column({ type: 'text', nullable: true })
+  lastEditedBy?: string | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  lastEditedAt?: Date | null;
 }

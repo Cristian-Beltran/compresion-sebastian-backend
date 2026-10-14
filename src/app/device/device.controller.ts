@@ -99,8 +99,10 @@ export class DeviceController {
         'MANUAL_ACTUATE',
         {
           groupId,
-          pumpOn: Boolean(body.pumpOn),
-          valveClosed: Boolean(body.valveClosed),
+          ...(body.pumpOn === undefined ? {} : { pumpOn: Boolean(body.pumpOn) }),
+          ...(body.valveClosed === undefined
+            ? {}
+            : { valveClosed: Boolean(body.valveClosed) }),
           durationMs,
           persistent: body.persistent !== false,
         },

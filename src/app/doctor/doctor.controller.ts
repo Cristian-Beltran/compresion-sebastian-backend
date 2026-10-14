@@ -186,51 +186,12 @@ export class DoctorController {
     dto: {
       patientId?: string;
       manual?: boolean;
-      intensity?: 'low' | 'medium' | 'high' | 'custom';
-      treatmentZone?: 'pantorrilla_izquierda' | 'pantorrilla_derecha';
+      intensity?: 'low' | 'medium' | 'high';
       mobilityLevel?: 'independiente' | 'movilidad_reducida' | 'inmovil';
-      targetPressureKpa?: number;
-      holdTimeSeconds?: number;
-      releaseTimeSeconds?: number;
-      cycleTarget?: number;
-      inflateTimeSeconds?: number;
-      groups?: TreatmentGroupConfig[];
+      groups?: Array<Pick<TreatmentGroupConfig, 'groupId' | 'zone'>>;
     },
   ) {
-    if (dto.groups?.length) {
-      return this.treatmentsService.start(
-        {
-          patientId: dto.patientId,
-          sessionType: dto.manual ? 'manual' : 'patient',
-          configId: 'multi-group-v2',
-          intensity: dto.intensity ?? 'custom',
-          mobilityLevel: dto.mobilityLevel,
-          groups: dto.groups,
-        },
-        user.sub,
-      );
-    }
-
-    if (dto.intensity === 'custom') {
-      return this.treatmentsService.start(
-        {
-          patientId: dto.patientId,
-          sessionType: dto.manual ? 'manual' : 'patient',
-          configId: 'custom',
-          intensity: 'custom',
-          treatmentZone: dto.treatmentZone,
-          mobilityLevel: dto.mobilityLevel,
-          targetPressureKpa: dto.targetPressureKpa,
-          holdTimeSeconds: dto.holdTimeSeconds,
-          releaseTimeSeconds: dto.releaseTimeSeconds,
-          cycleTarget: dto.cycleTarget,
-          inflateTimeSeconds: dto.inflateTimeSeconds,
-        },
-        user.sub,
-      );
-    }
-
-    if (!dto.intensity) return null;
+    if (!dto.intensity || !dto.groups?.length) return null;
     const config = await this.configurationsService.findByIntensity(
       dto.intensity,
     );
@@ -241,13 +202,16 @@ export class DoctorController {
         sessionType: dto.manual ? 'manual' : 'patient',
         configId: config.id,
         intensity: dto.intensity,
-        treatmentZone: dto.treatmentZone,
         mobilityLevel: dto.mobilityLevel,
-        targetPressureKpa: config.targetPressureKpa,
-        inflateTimeSeconds: config.inflateTimeSeconds,
-        holdTimeSeconds: config.holdTimeSeconds,
-        releaseTimeSeconds: config.releaseTimeSeconds,
-        cycleTarget: config.cycleTarget,
+        groups: dto.groups.map((group) => ({
+          ...group,
+          intensity: dto.intensity!,
+          targetPressureKpa: config.targetPressureKpa,
+          inflateTimeSeconds: config.inflateTimeSeconds,
+          holdTimeSeconds: config.holdTimeSeconds,
+          releaseTimeSeconds: config.releaseTimeSeconds,
+          cycleTarget: config.cycleTarget,
+        })),
       },
       user.sub,
     );

@@ -276,6 +276,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     void this.alertsService.create({
       severity,
       message: String(payload.message ?? payloadText),
+      component: typeof payload.component === 'string' ? payload.component : undefined,
       metadata: payload,
     });
     void this.logsService.create({

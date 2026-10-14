@@ -144,7 +144,7 @@ export class TreatmentsService {
     const saved = await this.treatmentRepo.save(item);
     for (let groupId = 1; groupId <= 4; groupId += 1) {
       const group = groups.find((item) => item.groupId === groupId);
-      this.mqttService.publishCommand('SET_GROUP_CONFIG', {
+      const ack = await this.mqttService.publishCommandAndWait('SET_GROUP_CONFIG', {
         groupId,
         enabled: group ? 1 : 0,
         ...(group
@@ -156,7 +156,10 @@ export class TreatmentsService {
               cycleTarget: group.cycleTarget,
             }
           : {}),
-      });
+      }, { actorUserId, category: 'session', treatmentId: saved.id, groupId });
+      if (ack.result !== 'accepted' && ack.result !== 'ok') {
+        throw new ConflictException(`Device rejected configuration: ${ack.result}`);
+      }
     }
 
     try {
