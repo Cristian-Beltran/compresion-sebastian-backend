@@ -106,8 +106,8 @@ export class TreatmentsService {
 
   async start(dto: StartTreatmentDto, actorUserId?: string) {
     const sessionType = dto.sessionType ?? 'patient';
-    if (sessionType === 'patient' && (!dto.patientId || !dto.mobilityLevel)) {
-      throw new BadRequestException('patientId and mobilityLevel are required');
+    if (sessionType === 'patient' && !dto.patientId) {
+      throw new BadRequestException('patientId is required');
     }
     const groups = this.normalizeGroups(dto);
 
@@ -294,6 +294,30 @@ export class TreatmentsService {
       actorUserId,
       message: interrupted ? 'Sesión interrumpida por un usuario' : 'Sesión detenida por un usuario',
       metadata: { cycleCount: saved.cycleCount, groups: saved.groups, medicalReport: !!medicalReport },
+    });
+    return saved;
+  }
+
+  /** Guarda el desenlace de una terapia que el dispositivo ya marcó como completada. */
+  async complete(id: string, actorUserId?: string, medicalReport?: string) {
+    const item = await this.treatmentRepo.findOne({ where: { id } });
+    if (!item) throw new NotFoundException('Treatment not found');
+    if (item.status === 'interrupted' || item.status === 'aborted') {
+      throw new ConflictException('Treatment cannot be completed');
+    }
+    item.status = 'completed';
+    item.endedAt ??= new Date();
+    item.medicalReport = medicalReport?.trim() || null;
+    const saved = await this.treatmentRepo.save(item);
+    await this.logsService.create({
+      level: 'info',
+      source: 'treatment',
+      category: 'session',
+      eventType: 'session_completed',
+      treatmentId: item.id,
+      actorUserId,
+      message: 'Terapia concluida correctamente',
+      metadata: { cycleCount: saved.cycleCount, report: Boolean(item.medicalReport) },
     });
     return saved;
   }

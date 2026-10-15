@@ -2,6 +2,7 @@ import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SystemLog } from './entities/system-log.entity';
+import { User } from '../users/entities/user.entity';
 
 export type LogLevel = 'info' | 'warn' | 'error';
 export type LogQuery = {
@@ -24,6 +25,8 @@ export class LogsService implements OnModuleInit, OnModuleDestroy {
   constructor(
     @InjectRepository(SystemLog)
     private readonly logsRepo: Repository<SystemLog>,
+    @InjectRepository(User)
+    private readonly usersRepo: Repository<User>,
   ) {}
 
   onModuleInit() {
@@ -53,16 +56,44 @@ export class LogsService implements OnModuleInit, OnModuleDestroy {
     requestId?: string;
     metadata?: Record<string, unknown>;
   }) {
-    const row = this.logsRepo.create(input);
+    const actor = input.actorUserId
+      ? await this.usersRepo.findOneBy({ id: input.actorUserId })
+      : null;
+    const row = this.logsRepo.create({
+      ...input,
+      actorRole: input.actorRole ?? actor?.type ?? 'sistema',
+      metadata: {
+        ...(input.metadata ?? {}),
+        actorName: actor?.fullname ?? 'Sistema',
+        action: input.eventType ?? input.message,
+        module: input.source || 'sistema',
+      },
+    });
     return this.logsRepo.save(row);
+  }
+
+  private async present(items: SystemLog[]) {
+    const ids = [...new Set(items.map((item) => item.actorUserId).filter(Boolean))] as string[];
+    const users = ids.length ? await this.usersRepo.findBy({ id: ids as any }) : [];
+    const names = new Map(users.map((user) => [user.id, user.fullname]));
+    return items.map((item) => {
+      const metadata = item.metadata ?? {};
+      return {
+        ...item,
+        user: names.get(item.actorUserId ?? '') ?? metadata.actorName ?? 'Sistema',
+        role: item.actorRole ?? 'sistema',
+        action: metadata.action ?? item.eventType ?? item.message,
+        module: metadata.module ?? item.source ?? 'sistema',
+      };
+    });
   }
 
   async findAll(limit = 100) {
     const safeLimit = Math.min(Math.max(Number(limit) || 100, 1), 500);
-    return this.logsRepo.find({
+    return this.present(await this.logsRepo.find({
       order: { createdAt: 'DESC' },
       take: safeLimit,
-    });
+    }));
   }
 
   async search(query: LogQuery) {
@@ -113,7 +144,7 @@ export class LogsService implements OnModuleInit, OnModuleDestroy {
     }
 
     const [items, total] = await builder.getManyAndCount();
-    return { items, total, page, pageSize };
+    return { items: await this.present(items), total, page, pageSize };
   }
 
   async cleanupTechnicalEvents() {

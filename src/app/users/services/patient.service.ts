@@ -79,6 +79,9 @@ export class PatientService {
     if (dto.diagnosis !== undefined) {
       patient.diagnosis = dto.diagnosis;
     }
+    if (dto.mobilityLevel !== undefined) {
+      patient.mobilityLevel = dto.mobilityLevel;
+    }
     await this.patientRepository.save(patient);
     return await this.findOne(id);
   }

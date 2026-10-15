@@ -59,4 +59,8 @@ export class CreatePatientDto {
   @IsOptional()
   @IsString()
   diagnosis?: string;
+
+  @IsOptional()
+  @IsIn(['independiente', 'movilidad_reducida', 'inmovil'])
+  mobilityLevel?: 'independiente' | 'movilidad_reducida' | 'inmovil';
 }

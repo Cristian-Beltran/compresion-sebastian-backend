@@ -37,4 +37,8 @@ export class User {
 
   @Column({ type: 'text' })
   status: Status;
+
+  /** Perfil de parámetros que cada médico reutiliza sin alterar protocolos globales. */
+  @Column({ type: 'simple-json', nullable: true })
+  customTherapyProfile?: Record<string, unknown> | null;
 }

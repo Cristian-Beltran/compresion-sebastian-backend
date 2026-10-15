@@ -9,6 +9,8 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { JwtAuthGuard } from 'src/context/shared/guards/jwt-auth.guard';
 import { MqttService } from '../mqtt/mqtt.service';
 import { PatientService } from '../users/services/patient.service';
@@ -18,6 +20,7 @@ import { ConfigurationsService } from '../configurations/configurations.service'
 import { TreatmentGroupConfig } from '../treatments/entities/treatment.entity';
 import { UserPayload } from 'src/context/shared/decorators/user.decorator';
 import { PayloadToken } from 'src/context/shared/models/token.model';
+import { User } from '../users/entities/user.entity';
 
 @UseGuards(JwtAuthGuard)
 @Controller('doctor')
@@ -27,6 +30,7 @@ export class DoctorController {
     private readonly patientService: PatientService,
     private readonly treatmentsService: TreatmentsService,
     private readonly configurationsService: ConfigurationsService,
+    @InjectRepository(User) private readonly usersRepo: Repository<User>,
   ) {}
 
   @Get('dashboard/summary')
@@ -118,6 +122,7 @@ export class DoctorController {
       document: row.document,
       phone: row.phone,
       diagnosis: row.diagnosis,
+      mobilityLevel: row.mobilityLevel,
       registeredAt: row.user?.createdAt,
     }));
   }
@@ -132,6 +137,7 @@ export class DoctorController {
       document?: string;
       phone?: string;
       diagnosis?: string;
+      mobilityLevel?: 'independiente' | 'movilidad_reducida' | 'inmovil';
     },
   ) {
     const slug = dto.fullname.toLowerCase().trim().replace(/\s+/g, '.');
@@ -145,6 +151,7 @@ export class DoctorController {
       document: dto.document,
       phone: dto.phone,
       diagnosis: dto.diagnosis,
+      mobilityLevel: dto.mobilityLevel,
     });
   }
 
@@ -161,6 +168,7 @@ export class DoctorController {
       document?: string;
       phone?: string;
       diagnosis?: string;
+      mobilityLevel?: 'independiente' | 'movilidad_reducida' | 'inmovil';
     },
   ) {
     return this.patientService.update(id, dto);
@@ -179,6 +187,21 @@ export class DoctorController {
     return this.treatmentsService.findActive();
   }
 
+  @Get('treatment-profile')
+  async treatmentProfile(@UserPayload() user: PayloadToken) {
+    const doctor = await this.usersRepo.findOneBy({ id: user.sub });
+    return doctor?.customTherapyProfile ?? null;
+  }
+
+  @Put('treatment-profile')
+  async saveTreatmentProfile(
+    @UserPayload() user: PayloadToken,
+    @Body() profile: Record<string, unknown>,
+  ) {
+    await this.usersRepo.update(user.sub, { customTherapyProfile: profile });
+    return profile;
+  }
+
   @Post('treatments/start')
   async startTreatment(
     @UserPayload() user: PayloadToken,
@@ -186,32 +209,34 @@ export class DoctorController {
     dto: {
       patientId?: string;
       manual?: boolean;
-      intensity?: 'low' | 'medium' | 'high';
-      mobilityLevel?: 'independiente' | 'movilidad_reducida' | 'inmovil';
-      groups?: Array<Pick<TreatmentGroupConfig, 'groupId' | 'zone'>>;
+      intensity?: 'low' | 'medium' | 'high' | 'custom';
+      groups?: TreatmentGroupConfig[];
     },
   ) {
     if (!dto.intensity || !dto.groups?.length) return null;
-    const config = await this.configurationsService.findByIntensity(
-      dto.intensity,
-    );
-    if (!config) return null;
+    const config = dto.intensity === 'custom'
+      ? null
+      : await this.configurationsService.findByIntensity(dto.intensity);
+    if (dto.intensity !== 'custom' && !config) return null;
     return this.treatmentsService.start(
       {
         patientId: dto.patientId,
         sessionType: dto.manual ? 'manual' : 'patient',
-        configId: config.id,
+        configId: config?.id ?? 'custom',
         intensity: dto.intensity,
-        mobilityLevel: dto.mobilityLevel,
-        groups: dto.groups.map((group) => ({
-          ...group,
-          intensity: dto.intensity!,
-          targetPressureKpa: config.targetPressureKpa,
-          inflateTimeSeconds: config.inflateTimeSeconds,
-          holdTimeSeconds: config.holdTimeSeconds,
-          releaseTimeSeconds: config.releaseTimeSeconds,
-          cycleTarget: config.cycleTarget,
-        })),
+        groups: dto.groups.map((group) =>
+          group.intensity === 'custom' || !config
+            ? group
+            : {
+                ...group,
+                intensity: dto.intensity!,
+                targetPressureKpa: config.targetPressureKpa,
+                inflateTimeSeconds: config.inflateTimeSeconds,
+                holdTimeSeconds: config.holdTimeSeconds,
+                releaseTimeSeconds: config.releaseTimeSeconds,
+                cycleTarget: config.cycleTarget,
+              },
+        ),
       },
       user.sub,
     );
@@ -224,6 +249,15 @@ export class DoctorController {
     @Body() body: { medicalReport?: string; interrupted?: boolean },
   ) {
     return this.treatmentsService.stop(id, user.sub, body?.medicalReport, body?.interrupted);
+  }
+
+  @Post('treatments/:id/complete')
+  completeTreatment(
+    @UserPayload() user: PayloadToken,
+    @Param('id') id: string,
+    @Body() body: { medicalReport?: string },
+  ) {
+    return this.treatmentsService.complete(id, user.sub, body?.medicalReport);
   }
 
   @Get('treatments/history')

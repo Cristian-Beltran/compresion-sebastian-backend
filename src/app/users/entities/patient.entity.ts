@@ -36,4 +36,7 @@ export class Patient {
 
   @Column({ type: 'text', nullable: true })
   diagnosis?: string;
+
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  mobilityLevel?: 'independiente' | 'movilidad_reducida' | 'inmovil';
 }
