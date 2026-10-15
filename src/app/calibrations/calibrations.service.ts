@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LogsService } from '../logs/logs.service';
 import { MqttService } from '../mqtt/mqtt.service';
 import {
   SensorCalibration,
@@ -32,7 +31,6 @@ export class CalibrationsService {
     @InjectRepository(SensorCalibration)
     private readonly calibrationRepo: Repository<SensorCalibration>,
     private readonly mqttService: MqttService,
-    private readonly logsService: LogsService,
   ) {}
 
   async findAll(
@@ -103,17 +101,6 @@ export class CalibrationsService {
       row.requestId = ack.requestId;
       row.metadata = ack;
       await this.calibrationRepo.save(row);
-      await this.logsService.create({
-        level: 'info',
-        source: 'calibration',
-        category: 'calibration',
-        eventType: 'calibration_zeroed',
-        groupId: row.groupId,
-        actorUserId,
-        requestId: ack.requestId,
-        message: `Cero registrado para sensor ${row.sensorType} del grupo ${row.groupId}`,
-        metadata: ack,
-      });
       return row;
     } catch (error) {
       row.status = 'failed';
@@ -176,22 +163,6 @@ export class CalibrationsService {
       row.metadata = ack;
       row.completedAt = new Date();
       await this.calibrationRepo.save(row);
-      await this.logsService.create({
-        level: 'info',
-        source: 'calibration',
-        category: 'calibration',
-        eventType: 'calibration_completed',
-        groupId: row.groupId,
-        actorUserId,
-        requestId: ack.requestId,
-        message: `Calibración completada para sensor ${row.sensorType} del grupo ${row.groupId}`,
-        metadata: {
-          coefficient: row.coefficient,
-          priorCoefficient: row.priorCoefficient,
-          referenceValue: row.referenceValue,
-          referenceUnit: row.referenceUnit,
-        },
-      });
       return row;
     } catch (error) {
       row.status = 'failed';

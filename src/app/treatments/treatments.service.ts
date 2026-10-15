@@ -178,31 +178,10 @@ export class TreatmentsService {
       if (ack.result !== 'accepted') {
         throw new ConflictException(`Device rejected treatment: ${ack.result}`);
       }
-      await this.logsService.create({
-        level: 'info',
-        source: 'treatment',
-        category: 'session',
-        eventType: 'session_started',
-        treatmentId: saved.id,
-        actorUserId,
-        requestId: ack.requestId,
-        message: `Sesión iniciada con ${groups.length} grupo(s) de compresión`,
-        metadata: { patientId: dto.patientId, sessionType, groups },
-      });
     } catch (error) {
       saved.status = 'aborted';
       saved.endedAt = new Date();
       await this.treatmentRepo.save(saved);
-      await this.logsService.create({
-        level: 'error',
-        source: 'treatment',
-        category: 'session',
-        eventType: 'session_failed',
-        treatmentId: saved.id,
-        actorUserId,
-        message: 'El dispositivo no pudo iniciar la sesión',
-        metadata: { error: error instanceof Error ? error.message : error },
-      });
       throw error;
     }
     return saved;
@@ -285,16 +264,6 @@ export class TreatmentsService {
     item.medicalReport = medicalReport ?? null;
     const saved = await this.treatmentRepo.save(item);
     this.mqttService.publishCommand('STOP_TREATMENT', { treatmentId: item.id });
-    await this.logsService.create({
-      level: 'info',
-      source: 'treatment',
-      category: 'session',
-      eventType: interrupted ? 'session_interrupted' : 'session_stopped',
-      treatmentId: item.id,
-      actorUserId,
-      message: interrupted ? 'Sesión interrumpida por un usuario' : 'Sesión detenida por un usuario',
-      metadata: { cycleCount: saved.cycleCount, groups: saved.groups, medicalReport: !!medicalReport },
-    });
     return saved;
   }
 
@@ -309,16 +278,6 @@ export class TreatmentsService {
     item.endedAt ??= new Date();
     item.medicalReport = medicalReport?.trim() || null;
     const saved = await this.treatmentRepo.save(item);
-    await this.logsService.create({
-      level: 'info',
-      source: 'treatment',
-      category: 'session',
-      eventType: 'session_completed',
-      treatmentId: item.id,
-      actorUserId,
-      message: 'Terapia concluida correctamente',
-      metadata: { cycleCount: saved.cycleCount, report: Boolean(item.medicalReport) },
-    });
     return saved;
   }
 }

@@ -383,19 +383,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       requestId,
     };
     this.client.publish(topic, JSON.stringify(body), { qos: 1 });
-    void this.logsService.create({
-      level: 'info',
-      source: 'command',
-      category: context.category ?? 'command',
-      eventType: 'command_published',
-      deviceId,
-      groupId: context.groupId,
-      treatmentId: context.treatmentId,
-      actorUserId: context.actorUserId,
-      requestId,
-      message: `Comando ${command} enviado al equipo`,
-      metadata: body,
-    });
     return { topic, message: body, requestId };
   }
 
@@ -409,18 +396,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     const promise = new Promise<DeviceAck>((resolve, reject) => {
       const timer = setTimeout(() => {
         this.pendingCommands.delete(requestId);
-        void this.logsService.create({
-          level: 'error',
-          source: 'command',
-          category: context.category ?? 'command',
-          eventType: 'command_timeout',
-          deviceId: this.appConfig.mqtt.deviceId,
-          groupId: context.groupId,
-          treatmentId: context.treatmentId,
-          actorUserId: context.actorUserId,
-          requestId,
-          message: `El equipo no confirmó ${command} dentro del tiempo esperado`,
-        });
         reject(
           new ServiceUnavailableException('El equipo no respondió al comando'),
         );

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from 'src/context/database/database.module';
 import config from 'src/context/shared/config';
@@ -15,6 +16,7 @@ import { TreatmentsModule } from './treatments/treatments.module';
 import { MqttModule } from './mqtt/mqtt.module';
 import { DoctorModule } from './doctor/doctor.module';
 import { CalibrationsModule } from './calibrations/calibrations.module';
+import { ActivityAuditInterceptor } from 'src/context/shared/interceptors/activity-audit.interceptor';
 
 @Module({
   imports: [
@@ -37,5 +39,6 @@ import { CalibrationsModule } from './calibrations/calibrations.module';
     DoctorModule,
     CalibrationsModule,
   ],
+  providers: [{ provide: APP_INTERCEPTOR, useClass: ActivityAuditInterceptor }],
 })
 export class AppModule {}
