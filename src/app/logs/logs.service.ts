@@ -56,6 +56,9 @@ export class LogsService implements OnModuleInit, OnModuleDestroy {
     requestId?: string;
     metadata?: Record<string, unknown>;
   }) {
+    // El registro de actividad es una auditoría de personas, no un historial
+    // técnico del broker, dispositivo o telemetría. Sin usuario no se guarda.
+    if (!input.actorUserId) return null;
     const actor = input.actorUserId
       ? await this.usersRepo.findOneBy({ id: input.actorUserId })
       : null;

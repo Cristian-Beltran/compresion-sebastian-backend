@@ -96,31 +96,12 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       );
       this.status.brokerConnected = true;
       this.status.updatedAt = new Date().toISOString();
-      void this.logsService.create({
-        level: 'info',
-        source: 'mqtt',
-        category: 'connection',
-        eventType: 'broker_connected',
-        deviceId,
-        message: 'Backend conectado al broker MQTT',
-      });
     });
 
     this.client.on('close', () => {
-      const wasConnected = this.status.brokerConnected;
       this.markDeviceOnline(false, 'broker_closed');
       this.status.brokerConnected = false;
       this.status.updatedAt = new Date().toISOString();
-      if (wasConnected) {
-        void this.logsService.create({
-          level: 'warn',
-          source: 'mqtt',
-          category: 'connection',
-          eventType: 'broker_disconnected',
-          deviceId,
-          message: 'Se perdió la conexión con el broker MQTT',
-        });
-      }
       this.rejectPendingCommands('Conexión MQTT cerrada');
     });
 
