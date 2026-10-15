@@ -1,6 +1,6 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { SystemLog } from './entities/system-log.entity';
 import { User } from '../users/entities/user.entity';
 
@@ -74,7 +74,7 @@ export class LogsService implements OnModuleInit, OnModuleDestroy {
 
   private async present(items: SystemLog[]) {
     const ids = [...new Set(items.map((item) => item.actorUserId).filter(Boolean))] as string[];
-    const users = ids.length ? await this.usersRepo.findBy({ id: ids as any }) : [];
+    const users = ids.length ? await this.usersRepo.findBy({ id: In(ids) }) : [];
     const names = new Map(users.map((user) => [user.id, user.fullname]));
     return items.map((item) => {
       const metadata = item.metadata ?? {};
