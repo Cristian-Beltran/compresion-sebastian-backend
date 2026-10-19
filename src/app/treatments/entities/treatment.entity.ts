@@ -15,6 +15,7 @@ export type TreatmentZone =
   | 'pie_derecho';
 export type MobilityLevel = 'independiente' | 'movilidad_reducida' | 'inmovil';
 export type TreatmentSessionType = 'patient' | 'manual';
+export type ClinicalRecordStatus = 'pending' | 'with_report' | 'without_report';
 
 export type TreatmentGroupConfig = {
   groupId: 1 | 2 | 3 | 4;
@@ -80,6 +81,9 @@ export class TreatmentEntity {
 
   @Column({ type: 'text', nullable: true })
   medicalReport?: string | null;
+
+  @Column({ type: 'varchar', length: 20, default: 'pending' })
+  clinicalRecordStatus: ClinicalRecordStatus;
 
   @Column({ type: 'varchar', length: 20, default: 'running' })
   status: TreatmentStatus;

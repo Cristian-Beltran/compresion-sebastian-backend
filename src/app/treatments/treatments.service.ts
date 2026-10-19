@@ -1,12 +1,15 @@
 import {
   BadRequestException,
   ConflictException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MqttService } from '../mqtt/mqtt.service';
+import { DeviceTelemetry } from '../mqtt/mqtt.types';
 import { LogsService } from '../logs/logs.service';
 import {
   MobilityLevel,
@@ -16,6 +19,7 @@ import {
   TreatmentSessionType,
   TreatmentZone,
 } from './entities/treatment.entity';
+import { TreatmentTelemetryEntity } from './entities/treatment-telemetry.entity';
 
 export type StartTreatmentDto = {
   patientId?: string | null;
@@ -34,10 +38,15 @@ export type StartTreatmentDto = {
 
 @Injectable()
 export class TreatmentsService {
+  private readonly lastTelemetryPersistedAt = new Map<string, number>();
+
   constructor(
+    @Inject(forwardRef(() => MqttService))
     private readonly mqttService: MqttService,
     @InjectRepository(TreatmentEntity)
     private readonly treatmentRepo: Repository<TreatmentEntity>,
+    @InjectRepository(TreatmentTelemetryEntity)
+    private readonly telemetryRepo: Repository<TreatmentTelemetryEntity>,
     private readonly logsService: LogsService,
   ) {}
 
@@ -52,6 +61,54 @@ export class TreatmentsService {
       where: { status: 'running' },
       order: { startedAt: 'DESC' },
     });
+  }
+
+  async findTelemetry(treatmentId: string) {
+    return this.telemetryRepo.find({
+      where: { treatmentId },
+      order: { recordedAt: 'ASC' },
+    });
+  }
+
+  /** Persist one sample for all active groups every two seconds at most. */
+  async recordTelemetry(telemetry: DeviceTelemetry) {
+    const treatmentId = telemetry.treatmentId;
+    if (!treatmentId || !Array.isArray(telemetry.groups) || !telemetry.groups.length) return;
+
+    const now = Date.now();
+    if (now - (this.lastTelemetryPersistedAt.get(treatmentId) ?? 0) < 2_000) return;
+    // Reserve the two-second window before awaiting I/O so concurrent MQTT events
+    // cannot both create a sample for the same instant.
+    this.lastTelemetryPersistedAt.set(treatmentId, now);
+
+    const active = await this.treatmentRepo.findOne({
+      where: { id: treatmentId, status: 'running' },
+    });
+    if (!active) return;
+
+    const newest = await this.telemetryRepo.findOne({
+      where: { treatmentId },
+      order: { recordedAt: 'DESC' },
+    });
+    if (newest && now - new Date(newest.recordedAt).getTime() < 2_000) return;
+
+    const rows = telemetry.groups
+      .filter((group) => group.enabled)
+      .map((group) =>
+        this.telemetryRepo.create({
+          treatmentId,
+          groupId: Number(group.groupId),
+          pressureKpa: Number(group.pressureKpa ?? 0),
+          forceNewtons: Number(group.forceNewtons ?? 0),
+        }),
+      );
+    if (!rows.length) return;
+    try {
+      await this.telemetryRepo.save(rows);
+    } catch (error) {
+      this.lastTelemetryPersistedAt.delete(treatmentId);
+      throw error;
+    }
   }
 
   private async syncActiveCycleCount() {
@@ -138,6 +195,7 @@ export class TreatmentsService {
       groups,
       endedAt: null,
       cycleCount: 0,
+      clinicalRecordStatus: 'pending',
       status: 'running',
     });
 
@@ -277,6 +335,7 @@ export class TreatmentsService {
     item.status = 'completed';
     item.endedAt ??= new Date();
     item.medicalReport = medicalReport?.trim() || null;
+    item.clinicalRecordStatus = item.medicalReport ? 'with_report' : 'without_report';
     const saved = await this.treatmentRepo.save(item);
     return saved;
   }

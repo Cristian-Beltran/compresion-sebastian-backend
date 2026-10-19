@@ -260,6 +260,11 @@ export class DoctorController {
     return this.treatmentsService.complete(id, user.sub, body?.medicalReport);
   }
 
+  @Get('treatments/:id/telemetry')
+  treatmentTelemetry(@Param('id') id: string) {
+    return this.treatmentsService.findTelemetry(id);
+  }
+
   @Get('treatments/history')
   async history(
     @Query('patientId') patientId?: string,

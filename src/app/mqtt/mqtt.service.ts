@@ -1,5 +1,6 @@
 import {
   Inject,
+  forwardRef,
   Injectable,
   Logger,
   OnModuleDestroy,
@@ -13,6 +14,7 @@ import config from 'src/context/shared/config';
 import { AlertsService } from '../alerts/alerts.service';
 import { LogsService } from '../logs/logs.service';
 import { DeviceAck, DeviceStatus, DeviceTelemetry } from './mqtt.types';
+import { TreatmentsService } from '../treatments/treatments.service';
 
 type CommandContext = {
   actorUserId?: string;
@@ -65,6 +67,8 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     private readonly appConfig: ConfigType<typeof config>,
     private readonly logsService: LogsService,
     private readonly alertsService: AlertsService,
+    @Inject(forwardRef(() => TreatmentsService))
+    private readonly treatmentsService: TreatmentsService,
   ) {}
 
   onModuleInit() {
@@ -198,6 +202,10 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       updatedAt: now,
       lastSeenAt: now,
     };
+
+    void this.treatmentsService.recordTelemetry(telemetry).catch((error) =>
+      this.logger.warn(`No se pudo guardar telemetría de la terapia: ${error instanceof Error ? error.message : 'error desconocido'}`),
+    );
 
     if (Date.now() - this.lastTelemetrySummaryAt >= 60_000) {
       this.lastTelemetrySummaryAt = Date.now();
