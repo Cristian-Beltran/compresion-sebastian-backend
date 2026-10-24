@@ -58,7 +58,7 @@ export class TreatmentsService {
   async findActive() {
     await this.syncActiveCycleCount();
     return this.treatmentRepo.findOne({
-      where: { status: 'running' },
+      where: [{ status: 'starting' }, { status: 'running' }],
       order: { startedAt: 'DESC' },
     });
   }
@@ -82,9 +82,14 @@ export class TreatmentsService {
     this.lastTelemetryPersistedAt.set(treatmentId, now);
 
     const active = await this.treatmentRepo.findOne({
-      where: { id: treatmentId, status: 'running' },
+      where: [{ id: treatmentId, status: 'starting' }, { id: treatmentId, status: 'running' }],
     });
     if (!active) return;
+
+    if (active.status === 'starting') {
+      active.status = 'running';
+      await this.treatmentRepo.save(active);
+    }
 
     const newest = await this.telemetryRepo.findOne({
       where: { treatmentId },
@@ -196,10 +201,23 @@ export class TreatmentsService {
       endedAt: null,
       cycleCount: 0,
       clinicalRecordStatus: 'pending',
-      status: 'running',
+      status: 'starting',
     });
 
     const saved = await this.treatmentRepo.save(item);
+    // The UI must be visible before waiting for four configuration ACKs and the
+    // start ACK. The active screen polls the persisted `starting` session.
+    void this.dispatchStart(saved, groups, sessionType, actorUserId);
+    return saved;
+  }
+
+  private async dispatchStart(
+    saved: TreatmentEntity,
+    groups: TreatmentGroupConfig[],
+    sessionType: TreatmentSessionType,
+    actorUserId?: string,
+  ) {
+    try {
     for (let groupId = 1; groupId <= 4; groupId += 1) {
       const group = groups.find((item) => item.groupId === groupId);
       const ack = await this.mqttService.publishCommandAndWait('SET_GROUP_CONFIG', {
@@ -220,7 +238,6 @@ export class TreatmentsService {
       }
     }
 
-    try {
       const ack = await this.mqttService.publishCommandAndWait(
         'START_TREATMENT',
         {
@@ -236,13 +253,21 @@ export class TreatmentsService {
       if (ack.result !== 'accepted') {
         throw new ConflictException(`Device rejected treatment: ${ack.result}`);
       }
+      saved.status = 'running';
+      await this.treatmentRepo.save(saved);
     } catch (error) {
       saved.status = 'aborted';
       saved.endedAt = new Date();
       await this.treatmentRepo.save(saved);
-      throw error;
+      await this.logsService.create({
+        level: 'warn',
+        source: 'treatment',
+        category: 'session',
+        eventType: 'session_start_failed',
+        treatmentId: saved.id,
+        message: error instanceof Error ? error.message : 'No se pudo iniciar la terapia',
+      });
     }
-    return saved;
   }
 
   private normalizeGroups(dto: StartTreatmentDto): TreatmentGroupConfig[] {
@@ -314,7 +339,7 @@ export class TreatmentsService {
     await this.syncActiveCycleCount();
     const item = await this.treatmentRepo.findOne({ where: { id } });
     if (!item) throw new NotFoundException('Treatment not found');
-    if (item.status !== 'running') {
+    if (item.status !== 'running' && item.status !== 'starting') {
       throw new ConflictException('Treatment is not running');
     }
     item.status = interrupted ? 'interrupted' : 'completed';

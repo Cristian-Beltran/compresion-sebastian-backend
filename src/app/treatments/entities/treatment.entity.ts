@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-export type TreatmentStatus = 'running' | 'completed' | 'aborted' | 'interrupted';
+export type TreatmentStatus = 'starting' | 'running' | 'completed' | 'aborted' | 'interrupted';
 export type TreatmentIntensity = 'low' | 'medium' | 'high' | 'custom';
 export type TreatmentZone =
   | 'pantorrilla_izquierda'

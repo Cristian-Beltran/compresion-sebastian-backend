@@ -5,6 +5,9 @@ import { TreatmentsService } from './treatments.service';
 import { LogsService } from '../logs/logs.service';
 
 describe('TreatmentsService multi-group sessions', () => {
+  const flushStart = async () => {
+    for (let index = 0; index < 12; index += 1) await Promise.resolve();
+  };
   const mqtt = {
     getStatus: jest.fn(() => ({
       groups: [],
@@ -25,6 +28,11 @@ describe('TreatmentsService multi-group sessions', () => {
   const logs = {
     create: jest.fn(async (value) => value),
   };
+  const telemetryRepository = {
+    findOne: jest.fn(),
+    create: jest.fn((value) => value),
+    save: jest.fn(),
+  };
 
   let service: TreatmentsService;
 
@@ -34,6 +42,7 @@ describe('TreatmentsService multi-group sessions', () => {
     service = new TreatmentsService(
       mqtt as unknown as MqttService,
       repository as unknown as Repository<TreatmentEntity>,
+      telemetryRepository as never,
       logs as unknown as LogsService,
     );
   });
@@ -66,6 +75,7 @@ describe('TreatmentsService multi-group sessions', () => {
         },
       ],
     });
+    await flushStart();
 
     expect(result.groups).toHaveLength(2);
     expect(repository.save).toHaveBeenCalledWith(
@@ -139,6 +149,7 @@ describe('TreatmentsService multi-group sessions', () => {
         },
       ],
     });
+    await flushStart();
 
     expect(repository.save).toHaveBeenCalledWith(
       expect.objectContaining({
