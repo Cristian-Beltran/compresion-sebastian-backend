@@ -23,6 +23,8 @@ import { TreatmentTelemetryEntity } from './entities/treatment-telemetry.entity'
 
 export type StartTreatmentDto = {
   patientId?: string | null;
+  responsibleUserId?: string | null;
+  responsibleName?: string | null;
   sessionType?: TreatmentSessionType;
   configId?: string | null;
   intensity: TreatmentIntensity;
@@ -188,6 +190,8 @@ export class TreatmentsService {
     const primaryGroup = groups[0];
     const item = this.treatmentRepo.create({
       patientId: dto.patientId,
+      responsibleUserId: dto.responsibleUserId,
+      responsibleName: dto.responsibleName,
       sessionType,
       configId: dto.configId ?? (dto.intensity === 'custom' ? 'custom' : null),
       intensity: dto.intensity,

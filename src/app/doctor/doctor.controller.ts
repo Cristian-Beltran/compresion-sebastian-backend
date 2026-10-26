@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -182,6 +183,12 @@ export class DoctorController {
     return this.patientService.updateStatus(id, dto.status);
   }
 
+  @Delete('patients/:id')
+  async removePatient(@Param('id') id: string) {
+    await this.patientService.remove(id);
+    return { deleted: true };
+  }
+
   @Get('treatments/active')
   activeTreatment() {
     return this.treatmentsService.findActive();
@@ -218,9 +225,12 @@ export class DoctorController {
       ? null
       : await this.configurationsService.findByIntensity(dto.intensity);
     if (dto.intensity !== 'custom' && !config) return null;
+    const responsible = await this.usersRepo.findOneBy({ id: user.sub });
     return this.treatmentsService.start(
       {
         patientId: dto.patientId,
+        responsibleUserId: user.sub,
+        responsibleName: responsible?.fullname ?? user.email,
         sessionType: dto.manual ? 'manual' : 'patient',
         configId: config?.id ?? 'custom',
         intensity: dto.intensity,

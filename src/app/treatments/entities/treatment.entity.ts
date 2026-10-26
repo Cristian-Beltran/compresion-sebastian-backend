@@ -37,6 +37,12 @@ export class TreatmentEntity {
   @Column({ type: 'varchar', length: 36, nullable: true })
   patientId?: string | null;
 
+  @Column({ type: 'varchar', length: 36, nullable: true })
+  responsibleUserId?: string | null;
+
+  @Column({ type: 'varchar', length: 160, nullable: true })
+  responsibleName?: string | null;
+
   @Column({ type: 'varchar', length: 12, default: 'patient' })
   sessionType: TreatmentSessionType;
 
