@@ -181,6 +181,8 @@ export class LogsService implements OnModuleInit, OnModuleDestroy {
             'maintenance',
             'sensor_test',
             'protocol_modified',
+            'configuracion',
+            'equipo',
           ],
         },
       );

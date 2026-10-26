@@ -1,6 +1,8 @@
 import {
   Body,
   Controller,
+  Delete,
+  ForbiddenException,
   Get,
   Param,
   ParseUUIDPipe,
@@ -83,5 +85,17 @@ export class AdminUsersController {
     @Body() body: { status: Status },
   ) {
     return this.usersService.updateStatus(id, body.status);
+  }
+
+  @Delete(':id')
+  async remove(
+    @UserPayload() user: PayloadToken,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ) {
+    if (user.sub === id) {
+      throw new ForbiddenException('No puede eliminar su propia cuenta');
+    }
+    await this.usersService.removeUser(id);
+    return { deleted: true };
   }
 }

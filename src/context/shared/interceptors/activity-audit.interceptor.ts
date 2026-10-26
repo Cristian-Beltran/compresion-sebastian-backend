@@ -41,7 +41,7 @@ export class ActivityAuditInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap(() => {
-        const descriptor = this.describe(method, route);
+        const descriptor = this.describe(method, route, request.body);
         void this.logsService.create({
           level: 'info',
           source: descriptor.module,
@@ -74,7 +74,7 @@ export class ActivityAuditInterceptor implements NestInterceptor {
     );
   }
 
-  private describe(method: string, route: string) {
+  private describe(method: string, route: string, body?: Record<string, unknown>) {
     const module = route.startsWith('/admin/users')
       ? 'usuarios'
       : route.startsWith('/doctor/patients') || route.startsWith('/patients')
@@ -98,7 +98,9 @@ export class ActivityAuditInterceptor implements NestInterceptor {
                         : route.startsWith('/sessions') || route.startsWith('/sesion')
                           ? 'sesiones'
                           : 'sistema';
-    const action = route.includes('/password')
+    const action = route.includes('/actuate')
+      ? 'actuator_changed'
+      : route.includes('/password')
       ? 'password_changed'
       : route.includes('/status')
         ? 'status_changed'
@@ -129,7 +131,7 @@ export class ActivityAuditInterceptor implements NestInterceptor {
       usuarios: 'usuario', pacientes: 'paciente', medicos: 'médico', tecnicos: 'técnico', familiares: 'familiar', terapias: 'terapia', configuracion: 'configuración', calibracion: 'calibración', equipo: 'equipo', alertas: 'alerta', sesiones: 'sesión', sistema: 'registro',
     };
     const labelByAction: Record<string, string> = {
-      created: `Creó ${resource[module]}`, updated: `Editó ${resource[module]}`, deleted: `Eliminó ${resource[module]}`, status_changed: `Cambió el estado de ${resource[module]}`, password_changed: 'Cambió la contraseña de un usuario', maintenance_entered: 'Ingresó el equipo a mantenimiento', maintenance_exited: 'Sacó el equipo de mantenimiento', emergency_stop: 'Ejecutó parada de emergencia', calibration_zeroed: 'Realizó cero de calibración', calibration_referenced: 'Aplicó referencia de calibración', calibration_reapplied: 'Reaplicó calibración', treatment_started: 'Inició terapia', treatment_stopped: 'Detuvo terapia', treatment_completed: 'Completó terapia',
+      created: `Creó ${resource[module]}`, updated: `Editó ${resource[module]}`, deleted: `Eliminó ${resource[module]}`, status_changed: `Cambió el estado de ${resource[module]}`, password_changed: 'Cambió la contraseña de un usuario', maintenance_entered: 'Ingresó el equipo a mantenimiento', maintenance_exited: 'Sacó el equipo de mantenimiento', emergency_stop: 'Ejecutó parada de emergencia', calibration_zeroed: 'Realizó cero de calibración', calibration_referenced: 'Aplicó referencia de calibración', calibration_reapplied: 'Reaplicó calibración', treatment_started: 'Inició terapia', treatment_stopped: 'Detuvo terapia', treatment_completed: 'Completó terapia', actuator_changed: body?.pumpOn !== undefined ? `Cambió bomba a ${body.pumpOn ? 'encendida' : 'apagada'}` : `Cambió válvula a ${body?.valveClosed ? 'cerrada' : 'abierta'}`,
     };
     return { module, action, label: labelByAction[action] ?? `Editó ${resource[module]}` };
   }
